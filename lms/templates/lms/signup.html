@@ -1,6 +1,7 @@
 {% extends 'lms/base.html' %}
 
 {% block title %}Sign Up - LMS{% endblock %}
+{% load static %}
 
 {% block content %}
 <style>
@@ -191,7 +192,7 @@
 <div class="auth-container">
     <div class="auth-card">
         <div class="auth-image">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='500'%3E%3Crect fill='%23d0f0c0' width='400' height='500' rx='12'/%3E%3Ccircle cx='200' cy='180' r='80' fill='%23ffffff'/%3E%3Ctext x='200' y='200' font-size='64' text-anchor='middle'%3E👨‍💼%3C/text%3E%3Crect x='120' y='280' width='160' height='40' rx='20' fill='%23ffffff'/%3E%3Crect x='80' y='340' width='240' height='40' rx='20' fill='%23ffffff'/%3E%3C/svg%3E" alt="Sign Up">
+            <img src="{% static 'images/login.jpg' %}" alt="register">
         </div>
         
         <div class="auth-form">
