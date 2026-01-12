@@ -1,0 +1,186 @@
+<!-- courses/enroll.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="enroll-page">
+    <div class="container">
+        <div class="enroll-card">
+            <h2>Enroll in {{ course.title }}</h2>
+            
+            <div class="course-summary">
+                {% if course.thumbnail %}
+                <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="course-thumbnail">
+                {% endif %}
+                
+                <div class="course-info">
+                    <h3>{{ course.title }}</h3>
+                    <p class="instructor">Instructor: {{ course.instructors|default:"Expert Instructor" }}</p>
+                    <p class="duration">Duration: {{ course.duration|default:"Self-paced" }}</p>
+                    <p class="level">Level: {{ course.get_level_display }}</p>
+                </div>
+                
+                <div class="price-section">
+                    {% if course.is_free %}
+                    <h3 class="price-free">FREE</h3>
+                    {% else %}
+                    {% if course.is_on_discount %}
+                    <h3 class="price-discount">${{ course.discount_price }}</h3>
+                    <p class="price-original">${{ course.price }}</p>
+                    {% else %}
+                    <h3 class="price-normal">${{ course.price }}</h3>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <button type="submit" class="btn-enroll">
+                    <i class="fas fa-lock"></i> Confirm Enrollment
+                </button>
+            </form>
+            
+            <p class="terms">
+                By enrolling, you agree to our Terms of Service and Privacy Policy.
+            </p>
+            
+            <a href="{% url 'course_detail' course.slug %}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Course
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.enroll-page {
+    padding: 60px 20px;
+    background: #f9f9f9;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.enroll-card {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.enroll-card h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #000;
+}
+
+.course-summary {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.course-thumbnail {
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.course-info h3 {
+    margin: 0 0 10px;
+    color: #000;
+}
+
+.course-info p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.price-section {
+    margin-left: auto;
+    text-align: right;
+}
+
+.price-free {
+    color: #50c878;
+    font-size: 28px;
+    margin: 0;
+}
+
+.price-discount {
+    color: #50c878;
+    font-size: 28px;
+    margin: 0;
+}
+
+.price-original {
+    color: #999;
+    text-decoration: line-through;
+    margin: 5px 0;
+}
+
+.price-normal {
+    color: #2d3436;
+    font-size: 28px;
+    margin: 0;
+}
+
+.btn-enroll {
+    display: block;
+    width: 100%;
+    background: #50c878;
+    color: white;
+    border: none;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 20px 0;
+}
+
+.btn-enroll:hover {
+    background: #3db368;
+    transform: translateY(-2px);
+}
+
+.btn-enroll i {
+    margin-right: 10px;
+}
+
+.terms {
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.btn-back {
+    display: block;
+    text-align: center;
+    color: #666;
+    text-decoration: none;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+    background: #f8f9fa;
+    color: #000;
+}
+
+.btn-back i {
+    margin-right: 8px;
+}
+</style>
+{% endblock %}

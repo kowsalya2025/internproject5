@@ -1,0 +1,202 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="payment-success-page">
+    <div class="container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            
+            <h1>Payment Successful!</h1>
+            <p class="success-message">Thank you for your purchase. You are now enrolled in the course.</p>
+            
+            <div class="course-details">
+                <h2>{{ course.title }}</h2>
+                <p><strong>Instructor:</strong> {{ course.instructors|default:"Expert Instructor" }}</p>
+                <p><strong>Amount Paid:</strong> ₹{{ payment.amount|floatformat:2 }}</p>
+                <p><strong>Transaction ID:</strong> {{ payment.razorpay_payment_id|default:"N/A" }}</p>
+                <p><strong>Date:</strong> {{ payment.payment_date|date:"F d, Y H:i" }}</p>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{% url 'course_detail' slug=course.slug %}" class="btn-primary">
+                    <i class="fas fa-play-circle"></i> Start Learning
+                </a>
+                <a href="{% url 'my_courses' %}" class="btn-secondary">
+                    <i class="fas fa-book"></i> My Courses
+                </a>
+                <a href="{% url 'all_courses' %}" class="btn-outline">
+                    <i class="fas fa-search"></i> Browse More Courses
+                </a>
+            </div>
+            
+            <div class="whats-next">
+                <h3>What's Next?</h3>
+                <ul>
+                    <li><i class="fas fa-video"></i> Access all course videos immediately</li>
+                    <li><i class="fas fa-file-download"></i> Download course materials</li>
+                    <li><i class="fas fa-comments"></i> Join the course discussion forum</li>
+                    <li><i class="fas fa-certificate"></i> Complete the course to get your certificate</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-success-page {
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.success-card {
+    background: white;
+    padding: 50px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 80px;
+    color: #50c878;
+    margin-bottom: 20px;
+}
+
+.success-card h1 {
+    font-size: 36px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.success-message {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.course-details {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.course-details h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.course-details p {
+    margin: 8px 0;
+    color: #555;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 30px 0;
+    flex-wrap: wrap;
+}
+
+.btn-primary, .btn-secondary, .btn-outline {
+    padding: 12px 25px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #50c878;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #3db368;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: #667eea;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #5a6fd8;
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: white;
+    color: #50c878;
+    border: 2px solid #50c878;
+}
+
+.btn-outline:hover {
+    background: #50c878;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.whats-next {
+    margin-top: 40px;
+    text-align: left;
+}
+
+.whats-next h3 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 22px;
+}
+
+.whats-next ul {
+    list-style: none;
+    padding: 0;
+}
+
+.whats-next li {
+    padding: 10px 0;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.whats-next i {
+    color: #50c878;
+    width: 20px;
+}
+
+@media (max-width: 768px) {
+    .success-card {
+        padding: 30px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-outline {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

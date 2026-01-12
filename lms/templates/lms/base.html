@@ -1,0 +1,425 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LMS - Learning Management System{% endblock %}</title>
+    <style>
+      * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo img {
+            height: 60px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 25px;
+            padding: 0.5rem 1.5rem;
+            min-width: 400px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .search-bar button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #22c55e;
+            border: 2px solid #22c55e;
+        }
+
+        .btn-primary {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #16a34a;
+        }
+
+        .btn-outline:hover {
+            background: #22c55e;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .messages {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 400px;
+        }
+
+        .message {
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.success {
+            background: #22c55e;
+            color: white;
+        }
+
+        .message.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .message.info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #333;
+            transition: 0.3s;
+        }
+
+        .footer {
+            background: #c8e6c9;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem 2rem;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+            gap: 3rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            width: 80px;
+            height: 80px;
+        }
+
+        .footer-brand h3 {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .footer-section h4 {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .footer-links a:hover {
+            color: #22c55e;
+        }
+
+        .footer-contact {
+            list-style: none;
+        }
+
+        .footer-contact li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .footer-contact .icon {
+            font-size: 1.1rem;
+            min-width: 20px;
+        }
+
+        .footer-contact a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-contact a:hover {
+            color: #22c55e;
+        }
+
+        .footer-bottom {
+            background: #b8d4ba;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .search-bar {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 1rem;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar"> <div class="nav-container"> <div class="logo"> <img src="/media/logo.png" alt="Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%2228%22 fill=%22%2322c55e%22/%3E%3Ctext x=%2230%22 y=%2238%22 font-size=%2224%22 fill=%22white%22 text-anchor=%22middle%22%3ELMS%3C/text%3E%3C/svg%3E'"> </div>
+            
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <div class="nav-menu" id="navMenu">
+                <div class="search-bar">
+                    <form action="{% url 'all_courses' %}" method="get" style="display: flex; width: 100%; align-items: center;">
+                        <input type="text" name="q" placeholder="What do want to learn?" value="{{ request.GET.q }}">
+                        <button type="submit">🔍</button>
+                    </form>
+                </div>
+                
+                <div class="nav-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'my_courses' %}" class="btn btn-outline">My Courses</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+                        <a href="{% url 'signup' %}" class="btn btn-primary">SignUp</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section footer-brand">
+                <img src="/media/logo.png" alt="Logo" class="footer-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%2235%22 fill=%22%2322c55e%22/%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%2230%22 fill=%22%23ffffff%22/%3E%3Ctext x=%2240%22 y=%2250%22 font-size=%2228%22 fill=%22%2322c55e%22 text-anchor=%22middle%22%3EVDC%3C/text%3E%3C/svg%3E'">
+                <h3>Vetri Digital College</h3>
+            </div>
+
+            <div class="footer-section">
+                <h4>Other Links</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'about_us' %}">About us</a></li>
+                    <li><a href="{% url 'contact_us' %}">Contact us</a></li>
+                    <li><a href="{% url 'privacy_policy' %}">Privacy policy</a></li>
+                    <li><a href="{% url 'terms_of_use' %}">Terms of use</a></li>
+                </ul>
+                <!-- <ul class="footer-links">
+                    <li><a href="{% url 'about_us' %}">About us</a></li>
+                    <li><a href="{% url 'contact_us' %}">Contact us</a></li>
+                    <li><a href="{% url 'privacy_policy' %}">Privacy policy</a></li>
+                    <li><a href="{% url 'terms_of_use' %}">Terms of use</a></li>
+                </ul> -->
+            </div>
+
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul class="footer-links">
+                    <li><a href="">Our team</a></li>
+                    <li><a href="">Testimonials</a></li>
+
+                    <!-- <li><a href="{% url 'about_us' %}">Our team</a></li>
+                    <li><a href="{% url 'contact_us' %}">Testimonials</a></li> -->
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Address</h4>
+                <ul class="footer-contact">
+                    <li>
+                        <span class="icon">✉️</span>
+                        <a href="mailto:Vetridigitalcollege.com">Vetridigitalcollege.com</a>
+                    </li>
+                    <li>
+                        <span class="icon">📞</span>
+                        <a href="tel:8438164827">8438164827 / 8438781327</a>
+                    </li>
+                    <li>
+                        <span class="icon">📍</span>
+                        <span>VTS & VIS, April's Complex, Shanthi Complex, Surandai.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>Copyright © 2025 Vetri digital college | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Auto-hide messages after 3 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                msg.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 3000);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

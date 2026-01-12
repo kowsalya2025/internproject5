@@ -1,0 +1,331 @@
+<!-- lms/templates/courses/all.html -->
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="all-courses-page">
+    <div class="container">
+        <h1 class="page-title">All Courses</h1>
+        
+        <!-- Category Filter -->
+        <div class="category-filter">
+            <a href="{% url 'all_courses' %}" class="category-btn {% if not selected_category %}active{% endif %}">
+                All Courses <span class="count">({{ all_courses_count }})</span>
+            </a>
+            
+            {% for category in categories %}
+            <a href="?category={{ category.slug }}" class="category-btn {% if selected_category == category.slug %}active{% endif %}">
+                {{ category.name }} 
+                {% if category_counts %}
+                    {% for key, value in category_counts.items %}
+                        {% if key == category.slug %}
+                            <span class="count">({{ value }})</span>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <span class="count">({{ category.course_set.count }})</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Course Grid -->
+        <div class="courses-grid">
+            {% for course in courses %}
+            <div class="course-card">
+                {% if course.image %}
+                <div class="course-image">
+                    <img src="{{ course.image.url }}" alt="{{ course.title }}">
+                    {% if course.is_on_discount %}
+                    <span class="discount-badge">
+                        {% if course.discount_price and course.price %}
+                            SAVE {{ course.get_discount_percentage|floatformat:0 }}%
+                        {% else %}
+                            SALE
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="course-content">
+                    <div class="category-tag">{{ course.category.name }}</div>
+                    
+                    <h3 class="course-title">
+                        <a href="{% url 'course_detail' course.slug %}">{{ course.title }}</a>
+                    </h3>
+                    
+                    <p class="course-description">{{ course.short_description|truncatewords:20|default:"" }}</p>
+                    
+                    <div class="course-meta">
+                        <span class="instructor">
+                            <i class="fas fa-user"></i> {{ course.instructors|default:"Expert Instructor" }}
+                        </span>
+                        <span class="duration">
+                            <i class="fas fa-clock"></i> {{ course.duration|default:"Self-paced" }}
+                        </span>
+                    </div>
+                    
+                    <div class="course-footer">
+                        <div class="price-section">
+                            {% if course.is_on_discount and course.discount_price %}
+                            <span class="original-price">₹{{ course.price|floatformat:2 }}</span>
+                            <span class="current-price">₹{{ course.discount_price|floatformat:2 }}</span>
+                            {% else %}
+                            <span class="current-price">₹{{ course.price|floatformat:2 }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <a href="{% url 'course_detail' course.slug %}" class="view-course-btn">
+                            View Course <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-courses">
+                <i class="fas fa-book-open"></i>
+                <h3>No courses found</h3>
+                <p>Check back soon for new courses!</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.all-courses-page {
+    padding: 40px 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 36px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.category-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.category-btn {
+    padding: 10px 20px;
+    background: #f0f2f5;
+    color: #555;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.category-btn:hover {
+    background: #e4e6e9;
+    transform: translateY(-2px);
+}
+
+.category-btn.active {
+    background: #50c878;
+    color: white;
+}
+
+.count {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.courses-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.course-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.course-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.course-image {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+}
+
+.course-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #ff6b6b;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.course-content {
+    padding: 20px;
+}
+
+.category-tag {
+    display: inline-block;
+    background: rgba(80, 200, 120, 0.1);
+    color: #50c878;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.course-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.course-title a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.course-title a:hover {
+    color: #50c878;
+}
+
+.course-description {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.course-meta {
+    display: flex;
+    justify-content: space-between;
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.course-meta i {
+    margin-right: 5px;
+    color: #50c878;
+}
+
+.course-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.price-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.original-price {
+    font-size: 14px;
+    color: #999;
+    text-decoration: line-through;
+}
+
+.current-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #50c878;
+}
+
+.view-course-btn {
+    background: #50c878;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.view-course-btn:hover {
+    background: #3db368;
+    transform: translateY(-2px);
+}
+
+.no-courses {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.no-courses i {
+    font-size: 60px;
+    color: #ddd;
+    margin-bottom: 20px;
+}
+
+.no-courses h3 {
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.no-courses p {
+    color: #888;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .courses-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .category-filter {
+        flex-direction: column;
+    }
+    
+    .page-title {
+        font-size: 28px;
+    }
+}
+</style>
+{% endblock %}
