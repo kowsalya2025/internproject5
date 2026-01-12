@@ -1,3 +1,5 @@
+
+
 """
 Django settings for lms_project project.
 
@@ -11,6 +13,12 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +28,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-l!2jv%k&ogob=b1a)93y(q0h$8$#csjiwikt=oq0y!g!c*&w+l'
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -46,6 +55,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
     'ckeditor',
 
+    # Local apps
     'lms',
 ]
 
@@ -59,9 +69,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',  # Added for allauth
-     'whitenoise.middleware.WhiteNoiseMiddleware',
-
+    'allauth.account.middleware.AccountMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'lms_project.urls'
@@ -70,16 +79,17 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR / 'templates',],
+            BASE_DIR / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug',  # Added
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.media',  # Added for media files
-                'django.template.context_processors.static',  # Added for static files
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
             ],
         },
     },
@@ -106,7 +116,6 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 ]
-
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
@@ -143,7 +152,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = []
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Add this if you have a static folder
+]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
@@ -162,30 +173,47 @@ LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
 # Django Allauth Settings
-ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_LOGIN_ON_GET = True
-LOGIN_REDIRECT_URL = '/'  # redirect after login
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+# ===== ALLAUTH SETTINGS =====
+# Configure allauth to work with email-only authentication
+ACCOUNT_AUTHENTICATION_METHOD = 'email'  # Users log in with email
+ACCOUNT_EMAIL_REQUIRED = True  # Email is required
+ACCOUNT_USERNAME_REQUIRED = False  # Username is NOT required
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None  # No username field
+ACCOUNT_EMAIL_VERIFICATION = 'optional'  # Can be 'mandatory', 'optional', or 'none'
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False  # Don't ask for password twice
+ACCOUNT_SESSION_REMEMBER = True  # Remember login
+ACCOUNT_UNIQUE_EMAIL = True  # Ensure emails are unique
+ACCOUNT_LOGOUT_ON_GET = True  # Logout on GET request
 
-# Google OAuth Settings (Add your credentials from Google Console)
+# ===== SOCIAL ACCOUNT SETTINGS =====
+SOCIALACCOUNT_AUTO_SIGNUP = True  # Automatically create users from social logins
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Skip email verification for social accounts
+SOCIALACCOUNT_EMAIL_REQUIRED = True  # Email is required
+SOCIALACCOUNT_QUERY_EMAIL = True  # Request email from social providers
+SOCIALACCOUNT_STORE_TOKENS = True  # Store OAuth tokens
+
+# IMPORTANT: Tell allauth to skip the username
+SOCIALACCOUNT_FORMS = {
+    'signup': 'lms.forms.CustomSocialSignupForm',
+}
+
+# Or if you don't want to create forms.py, use:
+SOCIALACCOUNT_ADAPTER = 'lms.adapters.CustomSocialAccountAdapter'
+
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+# ===== GOOGLE OAUTH =====
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
         'APP': {
-            'client_id': '',  # Add your Google Client ID here
-            'secret': '',      # Add your Google Client Secret here
-            'key': ''
+            'client_id': GOOGLE_CLIENT_ID,
+            'secret': GOOGLE_CLIENT_SECRET,
         }
     }
 }
@@ -193,7 +221,17 @@ SOCIALACCOUNT_PROVIDERS = {
 # Messages framework
 MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'
 
-RAZORPAY_KEY_ID = 'rzp_test_RQh36ufMwhjnvt'
-RAZORPAY_KEY_SECRET = 'DQduQT0Wb1Ff8SV3fOufDZ1o'
 
-DEBUG = True
+
+# Email Settings (for development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Session settings
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_SAVE_EVERY_REQUEST = True
+
+# Security settings for production (uncomment when deploying)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
