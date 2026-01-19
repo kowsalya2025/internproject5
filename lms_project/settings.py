@@ -60,7 +60,10 @@ ALLOWED_HOSTS = os.getenv(
 
 
 
-ALLOWED_HOSTS = ["*"]
+DJANGO_ALLOWED_HOSTS = "internproject5-c38q.onrender.com"  # ✅ Correct
+
+
+
 
 
 # Application definition
