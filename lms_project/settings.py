@@ -59,7 +59,8 @@ ALLOWED_HOSTS = os.getenv(
 ).split(",")
 
 
-# ALLOWED_HOSTS = ["*"]
+
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
