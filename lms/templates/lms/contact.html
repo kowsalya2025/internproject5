@@ -1,0 +1,235 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+.contact-head {
+    height: 250px;
+    background-color: rgb(23, 221, 205);
+    display: flex;
+    align-items: center;      /* vertical center */
+    justify-content: center;  /* horizontal center */
+}
+
+.contact-head h1 {
+    margin: 0;
+}
+/* ===== Wrapper ===== */
+.contact-wrapper {
+    padding: 80px 30px;
+    background: #ffffff;
+    font-family: 'Poppins', sans-serif;
+}
+
+.contact-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 30px;
+}
+
+/* ===== Left Form Card ===== */
+.contact-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 35px;
+    background: #ffffff;
+}
+
+.contact-card h3 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.contact-card p {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 14px 12px 40px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.form-group textarea {
+    padding-left: 14px;
+    resize: none;
+    height: 120px;
+}
+
+.form-group i {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: #6b7280;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #28a745;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 13px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+input, select, textarea {
+    width: 100%;
+    padding: 12px 14px 12px 40px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+}
+
+/* ===== Right Info Card ===== */
+.info-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 35px;
+    background: #ffffff;
+}
+
+.info-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-icon {
+    width: 42px;
+    height: 42px;
+    border: 2px solid #22c55e;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #22c55e;
+    font-size: 1.1rem;
+}
+
+.info-text h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.info-text p {
+    font-size: 0.9rem;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .contact-container {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+<section class="contact-head">
+    <h1>Contact Us</h1>
+</section>
+
+<section class="contact-wrapper">
+    <div class="contact-container">
+
+        <!-- Left Form -->
+        <div class="contact-card">
+            <h3>Leave A Reply</h3>
+            <p>Fill-up The Form and Message us of your amazing question. We are here to support you</p>
+
+           <form method="post">
+    {% csrf_token %}
+
+    <div class="form-row">
+        <div class="form-group">
+            <i class="bi bi-person"></i>
+            {{ form.name }}
+        </div>
+
+        <div class="form-group">
+            <i class="bi bi-envelope"></i>
+            {{ form.email }}
+        </div>
+    </div>
+
+    <div class="form-group">
+        {{ form.subject }}
+    </div>
+
+    <div class="form-group">
+        {{ form.message }}
+    </div>
+
+    <button type="submit" class="submit-btn">Submit</button>
+</form>
+
+        </div>
+
+        <!-- Right Info -->
+        <div class="info-card">
+            <h3>Office Information</h3>
+
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-telephone"></i></div>
+                <div class="info-text">
+                    <h4>Phone Number & Email</h4>
+                    <p>8438164827 / 8438781327<br>vetridigitalcollege.com</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-geo-alt"></i></div>
+                <div class="info-text">
+                    <h4>Our Office Address</h4>
+                    <p>VTS & VIS, April's Complex,<br>Shanthi Complex, Surandai.</p>
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-clock"></i></div>
+                <div class="info-text">
+                    <h4>Our Office Time</h4>
+                    <p>Monday to Saturday - 10.00 AM to 07.00 PM</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}

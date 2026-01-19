@@ -1,0 +1,702 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LMS - Learning Management System{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+
+   
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+        
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.2rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 3rem;
+            gap: 20rem;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            flex-shrink: 0;
+        }
+
+        .menu-toggle {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 8px;
+            background: none;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .menu-toggle span {
+            width: 28px;
+            height: 3px;
+            background: #333;
+            border-radius: 2px;
+            transition: 0.3s;
+        }
+
+        .menu-toggle:hover span {
+            background: #22c55e;
+        }
+
+        .logo img {
+            height: 65px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 3rem;
+            align-items: center;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 30px;
+            padding: 0.7rem 1.8rem;
+            min-width: 450px;
+            flex: 1;
+            max-width: 600px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar:focus-within {
+            background: white;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+        }
+
+        .search-bar input {
+            border: none;
+            background: none;
+            outline: none;
+            width: 100%;
+            font-size: 15px;
+            color: #333;
+        }
+
+        .search-bar input::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-bar button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 1.1rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .search-bar button:hover {
+            color: #22c55e;
+            transform: scale(1.1);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 0.85rem 2.2rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #22c55e;
+            border: 2px solid #22c55e;
+        }
+
+        .btn-primary {
+            background: #22c55e;
+            color: white;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+        }
+
+        .btn-primary:hover {
+            background: #16a34a;
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-outline:hover {
+            background: #22c55e;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar Styles */
+        .sidebar-toggle {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: -300px;
+            top: 80px;
+            width: 280px;
+            height: calc(100vh - 80px);
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 998;
+            overflow-y: auto;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 2rem 1.5rem 1.5rem;
+            border-bottom: 1px solid #e5e5e5;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .sidebar-brand-icon {
+            width: 45px;
+            height: 45px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-brand-text h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+            color: #1f2937;
+            line-height: 1.3;
+        }
+
+        .sidebar-menu {
+            padding: 1.5rem 0;
+        }
+
+        .sidebar-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 1.1rem 1.5rem;
+            color: #6b7280;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .sidebar-menu-item:hover {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+            color: #22c55e;
+        }
+
+        .sidebar-menu-item.active {
+            background: #f0fdf4;
+            border-left-color: #22c55e;
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .sidebar-menu-icon {
+            width: 40px;
+            height: 40px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #22c55e;
+            font-size: 1.15rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-menu-item:hover .sidebar-menu-icon {
+            background: #dcfce7;
+            transform: scale(1.05);
+        }
+
+        .sidebar-menu-item.active .sidebar-menu-icon {
+            background: #22c55e;
+            color: white;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 80px);
+            background: rgba(0,0,0,0.5);
+            display: none;
+            z-index: 997;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .messages {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1001;
+            max-width: 400px;
+        }
+
+        .message {
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .message.success {
+            background: #22c55e;
+            color: white;
+        }
+
+        .message.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .message.info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #333;
+            transition: 0.3s;
+        }
+
+        .footer {
+            background: #c8e6c9;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem 2rem;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1.5fr;
+            gap: 3rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .footer-logo {
+            width: 80px;
+            height: 80px;
+        }
+
+        .footer-brand h3 {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .footer-section h4 {
+            color: #333;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .footer-links a:hover {
+            color: #22c55e;
+        }
+
+        .footer-contact {
+            list-style: none;
+        }
+
+        .footer-contact li {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: #555;
+        }
+
+        .footer-contact .icon {
+            font-size: 1.1rem;
+            min-width: 20px;
+        }
+
+        .footer-contact a {
+            color: #555;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-contact a:hover {
+            color: #22c55e;
+        }
+
+        .footer-bottom {
+            background: #b8d4ba;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                padding: 0 1.5rem;
+                gap: 1rem;
+            }
+
+            .search-bar {
+                min-width: auto;
+                width: 100%;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: white;
+                flex-direction: column;
+                padding: 1rem;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                gap: 1rem;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .main-content.shifted {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .menu-toggle {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .menu-toggle {
+                display: flex;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                {% if user.is_authenticated %}
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                {% endif %}
+                <div class="logo">
+                    <img src="{% static 'images/logo.png' %}" alt="Logo">
+                </div>
+            </div>
+            
+            <div class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <div class="nav-menu" id="navMenu">
+                <div class="search-bar">
+                    <form action="{% url 'all_courses' %}" method="get" style="display: flex; width: 100%; align-items: center;">
+                        <input type="text" name="q" placeholder="What do want to learn?" value="{{ request.GET.q }}">
+                        <button type="submit">🔍</button>
+                    </form>
+                </div>
+                
+                <div class="nav-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'my_courses' %}" class="btn btn-outline">My Courses</a>
+                        <a href="{% url 'logout' %}" class="btn btn-outline">Logout</a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="btn btn-primary">Login</a>
+                        <a href="{% url 'signup' %}" class="btn btn-primary">SignUp</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    {% if user.is_authenticated %}
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">V</div>
+                <div class="sidebar-brand-text">
+                    <h3>Vetri Digital College</h3>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <a href="{% url 'home' %}" class="sidebar-menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                <div class="sidebar-menu-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <span>Profile</span>
+            </a>
+            <a href="{% url 'my_courses' %}" class="sidebar-menu-item {% if request.resolver_match.url_name == 'my_courses' %}active{% endif %}">
+                <div class="sidebar-menu-icon">
+                    <i class="fas fa-shopping-bag"></i>
+                </div>
+                <span>My Purchase</span>
+            </a>
+            <a href="#" class="sidebar-menu-item">
+                <div class="sidebar-menu-icon">
+                    <i class="fas fa-cog"></i>
+                </div>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="main-content" id="mainContent">
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section footer-brand">
+                <img src="/media/logo.png" alt="Logo" class="footer-logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%2235%22 fill=%22%2322c55e%22/%3E%3Ccircle cx=%2240%22 cy=%2240%22 r=%2230%22 fill=%22%23ffffff%22/%3E%3Ctext x=%2240%22 y=%2250%22 font-size=%2228%22 fill=%22%2322c55e%22 text-anchor=%22middle%22%3EVDC%3C/text%3E%3C/svg%3E'">
+                <h3>Vetri Digital College</h3>
+            </div>
+
+            <div class="footer-section">
+                <h4>Other Links</h4>
+                <ul class="footer-links">
+                    <li><a href="{% url 'about_us' %}">About us</a></li>
+                    <li><a href="{% url 'contact' %}">Contact us</a></li>
+                    <li><a href="{% url 'privacy_policy' %}">Privacy policy</a></li>
+                    <li><a href="{% url 'terms_of_use' %}">Terms of use</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Company</h4>
+                <ul class="footer-links">
+                    <li><a href="">Our team</a></li>
+                    <li><a href="">Testimonials</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-section">
+                <h4>Address</h4>
+                <ul class="footer-contact">
+                    <li>
+                        <span class="icon">✉️</span>
+                        <a href="mailto:Vetridigitalcollege.com">Vetridigitalcollege.com</a>
+                    </li>
+                    <li>
+                        <span class="icon">📞</span>
+                        <a href="tel:8438164827">8438164827 / 8438781327</a>
+                    </li>
+                    <li>
+                        <span class="icon">📍</span>
+                        <span>VTS & VIS, April's Complex, Shanthi Complex, Surandai.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>Copyright © 2025 Vetri digital college | All Rights Reserved</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('navMenu');
+            menu.classList.toggle('active');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const mainContent = document.getElementById('mainContent');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        // Auto-hide messages after 3 seconds
+        setTimeout(() => {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                msg.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 3000);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

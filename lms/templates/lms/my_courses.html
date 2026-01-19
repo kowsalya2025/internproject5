@@ -1,0 +1,304 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}My Courses - Vetri Digital College{% endblock %}
+
+{% block extra_css %}
+<style>
+    .courses-section {
+        padding: 3rem 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .section-header {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-tabs {
+        display: flex;
+        gap: 3rem;
+        border-bottom: 2px solid #e5e5e5;
+        margin-bottom: 3rem;
+    }
+
+    .tab {
+        padding: 1rem 0;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+        position: relative;
+        bottom: -2px;
+    }
+
+    .tab.active {
+        color: #22c55e;
+        border-bottom-color: #22c55e;
+    }
+
+    .tab:hover {
+        color: #22c55e;
+    }
+
+    .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .course-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+    }
+
+    .course-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .course-content {
+        padding: 1.5rem;
+    }
+
+    .course-badge {
+        display: inline-block;
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+    }
+
+    .course-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .course-description {
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .course-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .course-button {
+        background: #22c55e;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .course-button:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        color: #e5e5e5;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #999;
+        margin-bottom: 2rem;
+    }
+
+    .empty-state .btn {
+        background: #22c55e;
+        color: white;
+        padding: 1rem 2.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .empty-state .btn:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+        .courses-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section-tabs {
+            gap: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .tab {
+            white-space: nowrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="courses-section">
+    <div class="section-header">
+        <div class="section-tabs">
+            <div class="tab active" onclick="switchTab('courses')">Courses</div>
+            <div class="tab" onclick="switchTab('achievements')">Achievements</div>
+        </div>
+    </div>
+
+    <!-- Courses Tab Content -->
+    <div id="courses-content" class="tab-content">
+        {% if purchases or enrollments %}
+        <div class="courses-grid">
+            {% for purchase in purchases %}
+            <div class="course-card" onclick="window.location.href='{% url 'course_detail' purchase.course.slug %}'">
+                {% if purchase.course.thumbnail %}
+                <img src="{{ purchase.course.thumbnail.url }}" alt="{{ purchase.course.title }}" class="course-image">
+                {% else %}
+                <div class="course-image" style="background: linear-gradient(135deg, 
+                    {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
+                    {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
+                {% endif %}
+                <div class="course-content">
+                    <span class="course-badge">Best Courses</span>
+                    <h3 class="course-title">{{ purchase.course.title }}</h3>
+                    <p class="course-description">
+                        {{ purchase.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
+                    </p>
+                    <div class="course-footer">
+                        {% if purchase.first_video %}
+                            <a href="{% url 'video_player' purchase.first_video.id %}" class="course-button" onclick="event.stopPropagation()">
+                                Start Learning
+                            </a>
+                        {% else %}
+                            <a href="{% url 'course_detail' purchase.course.slug %}" class="course-button" onclick="event.stopPropagation()">
+                                View Course
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% for enrollment in enrollments %}
+            <div class="course-card" onclick="window.location.href='{% url 'course_detail' enrollment.course.slug %}'">
+                {% if enrollment.course.thumbnail %}
+                <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}" class="course-image">
+                {% else %}
+                <div class="course-image" style="background: linear-gradient(135deg, 
+                    {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
+                    {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
+                {% endif %}
+                <div class="course-content">
+                    <span class="course-badge">Best Courses</span>
+                    <h3 class="course-title">{{ enrollment.course.title }}</h3>
+                    <p class="course-description">
+                        {{ enrollment.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
+                    </p>
+                    <div class="course-footer">
+                        {% if enrollment.first_video %}
+                            <a href="{% url 'video_player' enrollment.first_video.id %}" class="course-button" onclick="event.stopPropagation()">
+                                Start Learning
+                            </a>
+                        {% else %}
+                            <a href="{% url 'course_detail' enrollment.course.slug %}" class="course-button" onclick="event.stopPropagation()">
+                                View Course
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <h3>No Courses Yet</h3>
+            <p>You haven't purchased any courses yet. Start exploring our course catalog!</p>
+            <a href="{% url 'all_courses' %}" class="btn">Browse Courses</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Achievements Tab Content (Hidden by default) -->
+    <div id="achievements-content" class="tab-content" style="display: none;">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <h3>Achievements Coming Soon</h3>
+            <p>Complete courses to unlock achievements and track your learning progress!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tabName) {
+    // Update tab styling
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Show/hide content
+    if (tabName === 'courses') {
+        document.getElementById('courses-content').style.display = 'block';
+        document.getElementById('achievements-content').style.display = 'none';
+    } else {
+        document.getElementById('courses-content').style.display = 'none';
+        document.getElementById('achievements-content').style.display = 'block';
+    }
+}
+</script>
+{% endblock %}

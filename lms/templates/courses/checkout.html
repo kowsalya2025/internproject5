@@ -1,0 +1,767 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* Checkout Page */
+.checkout-page {
+    padding: 40px 20px;
+    background: #f8f9fa;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Wrapper: Form + Order Summary */
+.checkout-wrapper {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+/* Billing Form */
+.billing-form-section {
+    flex: 1;
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.form-section {
+    margin-bottom: 30px;
+}
+
+.section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #50c878;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.form-group {
+    flex: 1;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: #fff;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #50c878;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(80,200,120,0.1);
+}
+
+.form-group input.error,
+.form-group select.error,
+.form-group textarea.error {
+    border-color: #ff6b6b;
+}
+
+.form-group input[readonly] {
+    background: #f8f9fa;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.phone-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.phone-input-group select {
+    flex: 0 0 80px;
+}
+
+.phone-input-group input {
+    flex: 1;
+}
+
+.field-note {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+}
+
+.error-message {
+    font-size: 12px;
+    color: #ff6b6b;
+    margin-top: 5px;
+    min-height: 18px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-top: 3px;
+    accent-color: #50c878;
+}
+
+.checkbox-label a {
+    color: #50c878;
+    text-decoration: none;
+}
+
+.checkbox-label a:hover {
+    text-decoration: underline;
+}
+
+/* Order Summary */
+.order-summary-section {
+    width: 450px;
+    flex-shrink: 0;
+}
+
+.order-card {
+    background: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.order-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.order-item {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.item-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.item-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.image-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #50c878;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 24px;
+}
+
+.item-details h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.item-meta {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.item-meta i {
+    color: #50c878;
+    width: 14px;
+}
+
+/* Price breakdown */
+.price-breakdown {
+    padding: 20px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.price-row span:first-child {
+    color: #666;
+}
+
+.price-row span:last-child {
+    font-weight: 500;
+}
+
+.discount-row {
+    color: #50c878;
+    font-weight: 600;
+}
+
+.price-row.total {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.total-amount {
+    color: #50c878;
+    font-size: 22px;
+}
+
+/* Payment methods */
+.payment-methods h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-methods h3 i {
+    color: #50c878;
+}
+
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+    border-color: #50c878;
+}
+
+.payment-option.active {
+    border-color: #50c878;
+    background: rgba(80,200,120,0.05);
+}
+
+.payment-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #50c878;
+}
+
+.payment-icon {
+    width: 40px;
+    height: 40px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #666;
+}
+
+.payment-option.active .payment-icon {
+    background: #50c878;
+    color: #fff;
+}
+
+.payment-info {
+    flex: 1;
+}
+
+.payment-title {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.payment-desc {
+    display: block;
+    font-size: 12px;
+    color: #888;
+}
+
+/* Buttons */
+.pay-now-btn {
+    width: 100%;
+    background: linear-gradient(135deg,#50c878 0%,#3db368 100%);
+    color: #fff;
+    border: none;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(80,200,120,0.3);
+    transition: all 0.3s ease;
+}
+
+.pay-now-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(80,200,120,0.4);
+}
+
+.pay-now-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Secure Note & Badges */
+.secure-note {
+    text-align: center;
+    margin-top: 15px;
+    color: #666;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.secure-note i {
+    color: #50c878;
+}
+
+.payment-badges {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.payment-badges img {
+    height: 20px;
+    filter: grayscale(1);
+    opacity: 0.7;
+}
+
+/* Refund policy */
+.refund-policy {
+    margin-top: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.refund-policy h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.refund-policy h4 i {
+    color: #50c878;
+}
+
+.refund-policy ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.refund-policy li {
+    padding: 5px 0;
+    color: #555;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.refund-policy li i {
+    color: #50c878;
+    font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+    .checkout-wrapper {
+        flex-direction: column;
+    }
+    
+    .order-summary-section {
+        width: 100%;
+    }
+    
+    .order-card {
+        position: static;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .page-title {
+        font-size: 28px;
+    }
+    
+    .billing-form-section,
+    .order-card {
+        padding: 20px;
+    }
+    
+    .checkout-page {
+        padding: 20px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-title {
+        font-size: 24px;
+    }
+    
+    .section-title {
+        font-size: 16px;
+    }
+    
+    .pay-now-btn {
+        padding: 15px;
+        font-size: 16px;
+    }
+    
+    .payment-option {
+        padding: 12px;
+    }
+}
+
+</style>
+<div class="checkout-page">
+    <div class="container">
+        <h1 class="page-title">Complete Your Purchase</h1>
+        
+        <div class="checkout-wrapper">
+            <!-- Left: Billing Form -->
+            <div class="billing-form-section">
+                <form id="billingForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">Personal Information</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <input type="text" id="firstName" name="first_name" 
+                                       value="{{ user.first_name|default:'' }}" 
+                                       placeholder="Enter your first name" required>
+                                <div class="error-message" id="firstNameError"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <input type="text" id="lastName" name="last_name" 
+                                       value="{{ user.last_name|default:'' }}" 
+                                       placeholder="Enter your last name" required>
+                                <div class="error-message" id="lastNameError"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">Contact Information</h2>
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" 
+                                   value="{{ user.email }}" 
+                                   placeholder="your.email@example.com" readonly>
+                            <div class="field-note">Email cannot be changed</div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone Number *</label>
+                            <div class="phone-input-group">
+                                <select id="countryCode" name="country_code" style="width: 80px;">
+                                    <option value="+91">+91</option>
+                                    <option value="+1">+1</option>
+                                    <option value="+44">+44</option>
+                                    <option value="+61">+61</option>
+                                    <option value="+65">+65</option>
+                                </select>
+                                <input type="tel" id="phone" name="phone" 
+                                       value="{{ user.profile.phone|default:'' }}"
+                                       placeholder="98765 43210" required>
+                            </div>
+                            <div class="error-message" id="phoneError"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-section">
+                        <h2 class="section-title">Billing Address</h2>
+                        <div class="form-group">
+                            <label for="address">Street Address *</label>
+                            <input type="text" id="address" name="address" 
+                                   placeholder="House number, street, area" required>
+                            <div class="error-message" id="addressError"></div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="city">City *</label>
+                                <input type="text" id="city" name="city" placeholder="Enter your city" required>
+                                <div class="error-message" id="cityError"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="state">State *</label>
+                                <input type="text" id="state" name="state" placeholder="Enter your state" required>
+                                <div class="error-message" id="stateError"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="zipCode">ZIP/PIN Code *</label>
+                                <input type="text" id="zipCode" name="zip_code" placeholder="123456" required>
+                                <div class="error-message" id="zipCodeError"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="country">Country *</label>
+                                <select id="country" name="country" required>
+                                    <option value="">Select Country</option>
+                                    <option value="IN" selected>India</option>
+                                    <option value="US">United States</option>
+                                    <option value="GB">United Kingdom</option>
+                                    <option value="CA">Canada</option>
+                                    <option value="AU">Australia</option>
+                                    <option value="AE">United Arab Emirates</option>
+                                    <option value="SG">Singapore</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Right: Order Summary -->
+            <div class="order-summary-section">
+                <div class="order-card">
+                    <h2 class="order-title">Order Summary</h2>
+                    
+                    <div class="order-item">
+                       <div class="item-image">
+    {% if course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}">
+    {% else %}
+        <div class="image-placeholder">
+            <i class="fas fa-book"></i>
+        </div>
+    {% endif %}
+</div>
+
+
+                        <div class="item-details">
+                            <h3>{{ course.title }}</h3>
+                            <p class="item-meta">
+                                <i class="fas fa-user"></i> {{ course.instructors|default:"Expert Instructor" }}
+                            </p>
+                            <p class="item-meta">
+                                <i class="fas fa-clock"></i> {{ course.duration|default:"Lifetime Access" }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="price-breakdown">
+                        <div class="price-row">
+                            <span>Original Price</span>
+                            <span>₹{{ course.price|floatformat:2 }}</span>
+                        </div>
+
+                        {% if course.is_on_discount and course.discount_price %}
+                        <div class="price-row discount-row">
+                            <span><i class="fas fa-tag"></i> Discount</span>
+                            <span>-₹{{ discount_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+
+                        <div class="price-row">
+                            <span>Subtotal</span>
+                            <span>₹{{ base_price|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="price-row">
+                            <span>Tax (GST 18%)</span>
+                            <span>₹{{ tax_amount|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="price-row total">
+                            <span>Total Amount</span>
+                            <span class="total-amount">₹{{ total_amount|floatformat:2 }}</span>
+                        </div>
+                    </div>
+
+                    <div class="terms-agreement">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="terms" name="terms" required>
+                            <span>I agree to the <a href="{% url 'terms' %}" target="_blank">Terms & Conditions</a> and understand that this is a non-refundable purchase.</span>
+                        </label>
+                        <div class="error-message" id="termsError"></div>
+                    </div>
+
+                    <!-- Add payment method selection here -->
+<div class="payment-methods">
+    <h3><i class="fa-solid fa-credit-card"></i> Choose Payment Method</h3>
+    
+    <div class="payment-options">
+        <!-- Card -->
+        <label class="payment-option active">
+            <input type="radio" name="payment_method" value="card" checked>
+            <!-- <span class="payment-icon"><i class="fa-solid fa-credit-card"></i></span> -->
+            <span class="payment-info">
+                <span class="payment-title">Card</span>
+                <span class="payment-desc">Debit/Credit card</span>
+            </span>
+        </label>
+
+        <!-- UPI -->
+        <label class="payment-option">
+            <input type="radio" name="payment_method" value="upi">
+            <!-- <span class="payment-icon"><i class="fa-brands fa-google-pay"></i></span> -->
+            <span class="payment-info">
+                <span class="payment-title">UPI</span>
+                <span class="payment-desc">Pay using UPI apps</span>
+            </span>
+        </label>
+    </div>
+</div>
+
+                    <div class="payment-actions" style="margin-top: 10px;">
+                        <button type="button" id="rzp-button" class="pay-now-btn">
+                            <i class="fas fa-lock"></i>
+                            <span class="btn-text">
+                                Pay ₹{{ total_amount|floatformat:2 }}
+                            </span>
+                        </button>
+                        <p class="secure-note">
+                            <i class="fas fa-shield-alt"></i> 
+                            <span>Your payment is secured with 256-bit SSL encryption</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('rzp-button').onclick = function(e){
+    e.preventDefault();
+
+    var options = {
+        "key": "{{ razorpay_key_id }}",  // test key
+        "amount": {{ razorpay_amount }}, // in paise
+        "currency": "INR",
+        "name": "E-Learning Platform",
+        "description": "{{ course.title }}",
+        "order_id": "{{ razorpay_order_id }}",
+        "handler": function(response){
+            var csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            var form = document.createElement('form');
+            form.method = "POST";
+            form.action = "{% url 'verify_payment' %}";
+
+            form.innerHTML = `
+                <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
+                <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+                <input type="hidden" name="razorpay_payment_id" value="${response.razorpay_payment_id}">
+                <input type="hidden" name="razorpay_signature" value="${response.razorpay_signature}">
+                <input type="hidden" name="course_slug" value="{{ course.slug }}">
+            `;
+
+            document.body.appendChild(form);
+            form.submit();
+        },
+        "theme": { "color": "#50c878" }
+    };
+
+    var rzp = new Razorpay(options);
+    rzp.open();
+};
+</script>
+
+
+{% endblock %}

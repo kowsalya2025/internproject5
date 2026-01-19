@@ -1,0 +1,780 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}{{ video.title }} - {{ course.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ---------- Main Layout ---------- */
+.main-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f9fafb;
+}
+
+/* ---------- Sidebar ---------- */
+.lms-sidebar {
+    margin-top: 100px;
+    background-color: #ffffff;
+    width: 350px;
+    flex-shrink: 0;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+    overflow-y: auto;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 20; /* FIXED */
+}
+
+
+.lms-sidebar .course-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.lms-sidebar .course-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: white;
+}
+
+/* ---------- Progress Bar ---------- */
+.progress-wrapper {
+    margin-top: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.progress-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.progress-percent {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: white;
+}
+
+.progress-bar-bg {
+    height: 8px;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.2);
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    background: linear-gradient(to right, #4ade80, #22d3ee);
+    width: {{ course_progress }}%;
+    transition: width 0.4s ease;
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+}
+
+/* ---------- Accordion Days ---------- */
+.curriculum-days {
+    padding: 0.5rem 0;
+}
+
+.day-header {
+    padding: 1rem 1.5rem;
+    background-color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 500;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+}
+
+.day-header:hover {
+    background-color: #f8fafc;
+}
+
+.day-header.active-day {
+    background-color: #eff6ff;
+    border-left: 4px solid #3b82f6;
+}
+
+.toggle-icon {
+    font-size: 0.75rem;
+    transition: transform 0.3s ease;
+    color: #6b7280;
+}
+
+.toggle-icon.open {
+    transform: rotate(180deg);
+    color: #3b82f6;
+}
+
+.day-videos {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    background-color: #f9fafb;
+}
+
+.day-videos.open {
+    max-height: 1000px;
+}
+
+.video-item {
+    display: flex;
+    align-items: center;
+    padding: 0.875rem 1.5rem;
+    padding-left: 2rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: #374151;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.video-item:hover {
+    background-color: #f1f5f9;
+}
+
+.video-item .video-icon {
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.video-item.completed {
+    border-left-color: #10b981;
+    background-color: #f0fdf4;
+}
+
+.video-item.active {
+    border-left-color: #3b82f6;
+    background-color: #eff6ff;
+    font-weight: 500;
+}
+
+.video-item.locked {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: #f9fafb;
+}
+
+.video-item.locked:hover {
+    background-color: #f9fafb;
+}
+
+.video-title {
+    flex: 1;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
+.video-duration {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-left: 0.5rem;
+    background: #e5e7eb;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    white-space: nowrap;
+}
+
+/* ---------- Main Content Area ---------- */
+.main-content {
+    flex: 1;
+    margin-left: 350px; /* Same as sidebar width */
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+/* ---------- Video Player Container ---------- */
+.video-player-container {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    margin-bottom: 1.5rem;
+}
+
+.video-wrapper {
+   
+    background: #000;
+    position: relative;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+}
+
+.video-wrapper iframe,
+.video-wrapper video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ---------- Video Info ---------- */
+.video-info {
+    padding: 1.5rem;
+}
+
+.video-info h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #111827;
+}
+
+.video-description {
+    color: #6b7280;
+    line-height: 1.6;
+    font-size: 0.9375rem;
+}
+
+/* ---------- Buttons ---------- */
+.video-controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.video-controls button,
+.video-controls a {
+    flex: 1;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    border-radius: 0.75rem;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    gap: 0.5rem;
+}
+
+.video-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.video-controls .btn-prev {
+    background-color: #f8fafc;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+}
+
+.video-controls .btn-prev:hover:not(:disabled) {
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
+}
+
+.video-controls .btn-next,
+.video-controls .btn-complete {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    border: none;
+}
+
+.video-controls .btn-next:hover:not(:disabled),
+.video-controls .btn-complete:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.video-controls .btn-complete.completed {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.video-controls .btn-complete.completed:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* ---------- Watch Progress ---------- */
+.watch-progress-container {
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.watch-progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+
+.watch-progress-label span:first-child {
+    font-weight: 500;
+}
+
+.watch-progress {
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.watch-progress-fill {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-radius: 9999px;
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+/* ---------- Day Status Badges ---------- */
+.day-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.6875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    margin-left: 0.5rem;
+    font-weight: 500;
+}
+
+.day-status.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.day-status.in-progress {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.day-status.not-started {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* ---------- Scrollbar ---------- */
+.lms-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.lms-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.lms-sidebar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.lms-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* ---------- Mobile Responsive ---------- */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+    
+    .lms-sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        max-height: 60vh;
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Sidebar -->
+    <div class="lms-sidebar">
+        <div class="course-header">
+            <h2>{{ course.title }}</h2>
+            <div class="progress-wrapper">
+                <div class="progress-header">
+                    <span class="progress-title">Your Progress</span>
+                    <span class="progress-percent">{{ course_progress }}%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill"></div>
+                </div>
+                <div class="progress-text">
+                    {{ completed_videos }}/{{ total_videos }} videos completed
+                    {% if completed_days %}
+                    • {{ completed_days }}/{{ curriculum_days|length }} days completed
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Days Accordion -->
+        <div class="curriculum-days">
+            {% for day in curriculum_days %}
+            <div class="curriculum-day">
+                <div class="day-header {% if video.curriculum_day.id == day.id %}active-day{% endif %}" 
+                     data-day-id="{{ day.id }}">
+                    <div>
+                        <strong>Day {{ forloop.counter }}</strong> - {{ day.title }}
+                        <span class="day-status 
+                            {% if day.progress_percentage == 100 %}completed
+                            {% elif day.progress_percentage > 0 %}in-progress
+                            {% else %}not-started{% endif %}">
+                            {% if day.progress_percentage == 100 %}
+                            <i class="fas fa-check-circle"></i> Complete
+                            {% elif day.progress_percentage > 0 %}
+                            <i class="fas fa-spinner"></i> {{ day.progress_percentage|floatformat:0 }}%
+                
+                            {% endif %}
+                        </span>
+                    </div>
+                    <span class="toggle-icon {% if video.curriculum_day.id == day.id %}open{% endif %}">▼</span>
+                </div>
+                <div class="day-videos {% if video.curriculum_day.id == day.id %}open{% endif %}">
+                    {% for vid in day.videos %}
+                    <a href="{% if vid.is_accessible %}{% url 'video_player' vid.id %}{% else %}#{% endif %}"
+                       class="video-item {% if vid.id == video.id %}active{% elif vid.is_completed %}completed{% elif not vid.is_accessible %}locked{% endif %}"
+                       data-video-id="{{ vid.id }}"
+                       {% if not vid.is_accessible %}onclick="event.preventDefault(); alert('Please complete previous videos first.');"{% endif %}>
+                        <i class="video-icon fas 
+                            {% if vid.is_completed %}fa-check-circle text-green-500
+                            {% elif not vid.is_accessible %}fa-lock text-gray-400
+                            {% elif vid.id == video.id %}fa-play-circle text-blue-600
+                            {% else %}fa-play-circle text-gray-400{% endif %}"></i>
+                        <span class="video-title">{{ vid.title }}</span>
+                        <span class="video-duration">{{ vid.duration }} min</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Video Player -->
+        <div class="video-player-container">
+            <div class="video-wrapper">
+                {% if video.youtube_id %}
+                    <div id="youtube-player"></div>
+                {% elif video.video_file or video.video_url %}
+                    <video id="video-player" controls controlsList="nodownload" playsinline
+                           data-video-id="{{ video.id }}">
+                        {% if video.video_file %}
+                        <source src="{{ video.video_file.url }}" type="video/mp4">
+                        {% else %}
+                        <source src="{{ video.video_url }}" type="video/mp4">
+                        {% endif %}
+                        Your browser does not support the video tag.
+                    </video>
+                {% else %}
+                    <div class="flex flex-col items-center justify-center w-full h-full text-white bg-gray-800">
+                        <i class="fas fa-video-slash text-5xl mb-4"></i>
+                        <p class="text-xl">Video not available</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Video Info -->
+            <div class="video-info">
+                <h1>{{ video.title }}</h1>
+                {% if video.description %}
+                <div class="video-description">
+                    {{ video.description|linebreaks }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Buttons -->
+            <div class="video-controls">
+                {% if previous_video %}
+                <a href="{% url 'video_player' previous_video.id %}" class="btn-prev">
+                    <i class="fas fa-chevron-left"></i> Previous Video
+                </a>
+                {% else %}
+                <button class="btn-prev" disabled>
+                    <i class="fas fa-chevron-left"></i> Previous Video
+                </button>
+                {% endif %}
+
+                <button id="mark-complete-btn" class="btn-complete {% if video.is_completed %}completed{% endif %}" 
+                        {% if video.is_completed %}disabled{% endif %}>
+                    <i class="fas {% if video.is_completed %}fa-check-circle{% else %}fa-check{% endif %}"></i>
+                    {% if video.is_completed %}Completed{% else %}Mark as Complete{% endif %}
+                </button>
+
+                {% if next_video %}
+                <a href="{% url 'video_player' next_video.id %}" class="btn-next">
+                    Next Video <i class="fas fa-chevron-right"></i>
+                </a>
+                {% else %}
+                <button class="btn-next" disabled>
+                    Next Video <i class="fas fa-chevron-right"></i>
+                </button>
+                {% endif %}
+            </div>
+            
+            <!-- Watch Progress -->
+            <div class="watch-progress-container">
+                <div class="watch-progress-label">
+                    <span>Watch Progress</span>
+                    <span id="watch-percentage">{{ video.watched_percentage|default:0 }}%</span>
+                </div>
+                <div class="watch-progress">
+                    <div id="watch-progress-fill" class="watch-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ---------- Accordion ----------
+document.querySelectorAll('.day-header').forEach(header => {
+    header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const icon = header.querySelector('.toggle-icon');
+        
+        // Close all other accordions
+        document.querySelectorAll('.day-videos').forEach(otherContent => {
+            if (otherContent !== content && otherContent.classList.contains('open')) {
+                otherContent.style.maxHeight = null;
+                otherContent.classList.remove('open');
+                const otherIcon = otherContent.previousElementSibling.querySelector('.toggle-icon');
+                if (otherIcon) otherIcon.classList.remove('open');
+            }
+        });
+        
+        // Toggle current
+        if (content.classList.contains('open')) {
+            content.style.maxHeight = null;
+            content.classList.remove('open');
+            icon.classList.remove('open');
+        } else {
+            content.style.maxHeight = content.scrollHeight + 'px';
+            content.classList.add('open');
+            icon.classList.add('open');
+        }
+    });
+});
+
+// ---------- Video Watch Progress ----------
+let videoWatched = {% if video.is_completed %}true{% else %}false{% endif %};
+let watchedPercentage = {% if video.watched_percentage %}{{ video.watched_percentage }}{% else %}0{% endif %};
+const videoPlayer = document.getElementById('video-player');
+const markCompleteBtn = document.getElementById('mark-complete-btn');
+const watchProgressFill = document.getElementById('watch-progress-fill');
+const watchPercentageText = document.getElementById('watch-percentage');
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+// Initialize progress display
+if (watchProgressFill) {
+    watchProgressFill.style.width = watchedPercentage + '%';
+}
+if (watchPercentageText) {
+    watchPercentageText.textContent = Math.round(watchedPercentage) + '%';
+}
+
+if (videoPlayer && !videoWatched) {
+    videoPlayer.addEventListener('timeupdate', () => {
+        if (videoPlayer.duration) {
+            const percent = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+            if (percent > watchedPercentage) watchedPercentage = percent;
+            
+            if (watchProgressFill) {
+                watchProgressFill.style.width = Math.round(watchedPercentage) + '%';
+            }
+            if (watchPercentageText) {
+                watchPercentageText.textContent = Math.round(watchedPercentage) + '%';
+            }
+            
+            if (watchedPercentage >= 90 && !videoWatched) {
+                videoWatched = true;
+                if (markCompleteBtn) {
+                    markCompleteBtn.disabled = false;
+                }
+            }
+        }
+    });
+}
+
+// ---------- Mark as Complete ----------
+if (markCompleteBtn && !markCompleteBtn.disabled) {
+    markCompleteBtn.addEventListener('click', () => {
+        if (!videoWatched && watchedPercentage < 90) {
+            return alert('Please watch at least 90% of the video to mark it as complete.');
+        }
+        
+        // Show loading state
+        const originalText = markCompleteBtn.innerHTML;
+        markCompleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+        markCompleteBtn.disabled = true;
+        
+        fetch(`/lms/video/{{ video.id }}/complete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ 
+                watched_percentage: Math.round(watchedPercentage),
+                mark_complete: true 
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Update button state
+                markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                markCompleteBtn.classList.add('completed');
+                markCompleteBtn.disabled = true;
+                
+                // Reload page after a short delay to update progress
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                throw new Error('Mark complete failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            markCompleteBtn.innerHTML = originalText;
+            markCompleteBtn.disabled = false;
+            alert('Failed to mark video as complete. Please try again.');
+        });
+    });
+}
+
+// ---------- YouTube Player ----------
+{% if video.youtube_id %}
+var ytPlayer;
+var ytProgressInterval;
+
+function onYouTubeIframeAPIReady() {
+    ytPlayer = new YT.Player('youtube-player', {
+        videoId: '{{ video.youtube_id }}',
+        playerVars: { 
+            'playsinline': 1, 
+            'rel': 0, 
+            'modestbranding': 1,
+            'controls': 1
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    // Start checking progress
+    ytProgressInterval = setInterval(checkYTProgress, 1000);
+}
+
+function onPlayerStateChange(event) {
+    if (event.data === YT.PlayerState.ENDED) {
+        watchedPercentage = 100;
+        videoWatched = true;
+        updateProgressDisplay();
+        if (markCompleteBtn) {
+            markCompleteBtn.disabled = false;
+        }
+        clearInterval(ytProgressInterval);
+    }
+}
+
+function checkYTProgress() {
+    if (ytPlayer && ytPlayer.getDuration) {
+        const currentTime = ytPlayer.getCurrentTime();
+        const duration = ytPlayer.getDuration();
+        if (duration > 0) {
+            const percent = (currentTime / duration) * 100;
+            if (percent > watchedPercentage) {
+                watchedPercentage = percent;
+                updateProgressDisplay();
+                
+                if (watchedPercentage >= 90 && !videoWatched) {
+                    videoWatched = true;
+                    if (markCompleteBtn) {
+                        markCompleteBtn.disabled = false;
+                    }
+                }
+            }
+        }
+    }
+}
+
+function updateProgressDisplay() {
+    if (watchProgressFill) {
+        watchProgressFill.style.width = Math.round(watchedPercentage) + '%';
+    }
+    if (watchPercentageText) {
+        watchPercentageText.textContent = Math.round(watchedPercentage) + '%';
+    }
+}
+
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+document.head.appendChild(tag);
+{% endif %}
+
+// Auto-open the current day's videos
+document.addEventListener('DOMContentLoaded', function() {
+    const activeDayHeader = document.querySelector('.day-header.active-day');
+    if (activeDayHeader) {
+        const content = activeDayHeader.nextElementSibling;
+        const icon = activeDayHeader.querySelector('.toggle-icon');
+        if (content && !content.classList.contains('open')) {
+            content.style.maxHeight = content.scrollHeight + 'px';
+            content.classList.add('open');
+            if (icon) icon.classList.add('open');
+        }
+    }
+});
+</script>
+{% endblock %}

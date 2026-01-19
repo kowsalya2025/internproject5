@@ -1,0 +1,218 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block content %}
+
+
+    <style>
+
+    .about-section {
+      background: #89bc4f; /* Matching the green from your screenshot */
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+      position: relative;
+    }
+
+    .about-section h2 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+    }
+
+    .about-section p {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 0 150px;
+      line-height: 1.6;
+    }
+
+    .about-images {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .about-images img {
+      width: 700px;
+      max-width: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .about-images {
+        flex-direction: column;
+      }
+
+      .about-images img {
+        width: 200px;
+        margin-bottom: 15px;
+      }
+    }
+
+      /* ===== About Section Wrapper ===== */
+.about-wrapper {
+    background-color: #ffffff;
+    padding: 80px 40px;
+}
+
+.about-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 60px;
+}
+
+/* ===== Left Card ===== */
+.about-card {
+    background: #ffffff;
+    padding: 40px 35px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.about-card h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #000000;
+}
+
+.about-card p {
+    font-size: 1.4rem;
+    line-height: 1.8;
+    margin-bottom: 18px;
+}
+
+/* ===== Right Illustration ===== */
+.about-illustration {
+    text-align: center;
+}
+
+.about-illustration img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .about-container {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .about-card {
+        text-align: left;
+    }
+}
+  </style>
+
+  <section class="about-section">
+    <h2>About Vetri Digital</h2>
+    <p>Welcome to Vetri Digital Courses—empowering learners with skills for today's world. Learn, grow, succeed!</p>
+    <div class="about-images">
+      <img src="{% static 'images/aboutmen.png' %}" alt="Instructor 1">
+
+      
+    </div>
+  </section>
+
+
+
+
+<section class="about-wrapper">
+    <div class="about-container">
+
+        <!-- Left Content Card -->
+        <div class="about-card">
+            <h2>About Us</h2>
+            <p>
+                Welcome to Vetri Digital Courses,<br>
+                where learning meets innovation!
+            </p>
+
+            <p>
+                At Vetri, we believe that education should be accessible,
+                engaging, and empowering. Our mission is to bridge
+                the gap between aspiring learners and industry-ready
+                skills by offering comprehensive online courses tailored
+                to meet today’s digital demands.
+            </p>
+        </div>
+
+        <!-- Right Illustration -->
+        <div class="about-illustration">
+            <img src="{% static 'images/about2.png' %}" alt="Vetri Digital Team Illustration">
+        </div>
+
+    </div>
+</section>
+
+
+<section class="about-wrapper">
+    <div class="about-container">
+
+        <div class="about-illustration">
+            <img src="{% static 'images/about3.png' %}" alt="Vetri Digital Team Illustration">
+        </div>
+
+
+        <div class="about-card">
+            <h2>Who We Are?</h2>
+            
+
+            <p>
+                We are a passionate team of educators, industry experts, and technologists driven by a shared vision: to empower
+                learners with the tools they need tosucceed in their careers and personal growth. Backed by years of expertise in
+                digital education, we provide a platform that delivers high-quality learning experiences designed for real-world impact
+            </p>
+        </div>
+
+      
+
+    </div>
+</section>
+
+
+<section class="about-wrapper">
+    <div class="about-container">
+
+        <!-- Left Content Card -->
+        <div class="about-card">
+            <h2>Our Vison</h2>
+         
+
+            <p>
+               At Vetri Digital Courses, our vision is to
+revolutionize online education by
+providing innovative, accessible, and
+industry-focused learning experiences.
+We aim to empower individuals with the
+skills and knowledge needed to excel in
+the digital age, bridging the gap
+between education and real-world
+application. By focusing on quality and
+practicality, we strive to inspire growth,
+unlock potential, and shape a future
+where learning drives success and
+innovation.
+            </p>
+        </div>
+
+        <!-- Right Illustration -->
+        <div class="about-illustration">
+            <img src="{% static 'images/about4.png' %}" alt="Vetri Digital Team Illustration">
+        </div>
+
+    </div>
+</section>
+
+
+
+{% endblock %}
