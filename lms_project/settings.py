@@ -56,14 +56,14 @@ DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 print(f"DEBUG MODE: {DEBUG}")  # Add this line to check
 print(f"DJANGO_DEBUG env var: {os.getenv('DJANGO_DEBUG')}")
 
-ALLOWED_HOSTS = [
-    "internproject5-c38q.onrender.com",
-    "localhost",
-    "127.0.0.1",
-    ".onrender.com",
-]
+# ALLOWED_HOSTS = [
+#     "internproject5-c38q.onrender.com",
+#     "localhost",
+#     "127.0.0.1",
+#     ".onrender.com",
+# ]
 
-
+ALLOWED_HOSTS = ["*"]
 
 
 
