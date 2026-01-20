@@ -59,7 +59,9 @@ ALLOWED_HOSTS = [
     "internproject5-c38q.onrender.com",
     "localhost",
     "127.0.0.1",
+    ".onrender.com",
 ]
+
 
 
 
@@ -180,9 +182,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',  # Add this if you have a static folder
-]
+# STATICFILES_DIRS = [
+#     BASE_DIR / 'static',  # Add this if you have a static folder
+# ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
