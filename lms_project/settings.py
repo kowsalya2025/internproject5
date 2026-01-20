@@ -52,15 +52,15 @@ if not SECRET_KEY:
 # DEBUG = True
 
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+print(f"DEBUG MODE: {DEBUG}")  # Add this line to check
+print(f"DJANGO_DEBUG env var: {os.getenv('DJANGO_DEBUG')}")
 
-ALLOWED_HOSTS = os.getenv(
-    "DJANGO_ALLOWED_HOSTS",
-    "localhost,127.0.0.1"
-).split(",")
+ALLOWED_HOSTS = [
+    "internproject5-c38q.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
 
-
-
-DJANGO_ALLOWED_HOSTS = "internproject5-c38q.onrender.com"  # ✅ Correct
 
 
 
@@ -258,13 +258,17 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Security settings for production (uncomment when deploying)
-if DEBUG:
-    SECURE_SSL_REDIRECT = False
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-else:
+# Security settings for production
+if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+else:
+    # Development settings - no SSL
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
