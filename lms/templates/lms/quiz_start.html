@@ -1,0 +1,287 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}Quiz - {{ course.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quiz-container {
+        max-width: 900px;
+        margin: 3rem auto;
+        padding: 2rem;
+    }
+
+    .quiz-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 2rem;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .quiz-header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .quiz-header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .quiz-info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin: 2rem 0;
+    }
+
+    .info-item {
+        text-align: center;
+        padding: 1.5rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .info-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-label {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .instructions {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+    }
+
+    .instructions h3 {
+        color: #92400e;
+        margin-bottom: 1rem;
+    }
+
+    .instructions ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .instructions li {
+        padding: 0.5rem 0;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .instructions li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #f59e0b;
+        font-weight: bold;
+    }
+
+    .previous-attempts {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+
+    .attempt-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .attempt-item:last-child {
+        border-bottom: none;
+    }
+
+    .attempt-score {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .attempt-score.passed {
+        color: #22c55e;
+    }
+
+    .attempt-score.failed {
+        color: #ef4444;
+    }
+
+    .btn-start {
+        background: #22c55e;
+        color: white;
+        padding: 1.25rem 3rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1.1rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-start:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+    }
+
+    .btn-back {
+        background: #6b7280;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        margin-left: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background: #4b5563;
+    }
+
+    .actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .warning-box {
+        background: #fee2e2;
+        border-left: 4px solid #ef4444;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+        color: #991b1b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="quiz-header">
+        <h1>📝 {{ quiz.title }}</h1>
+        <p>{{ course.title }}</p>
+    </div>
+
+    <div class="quiz-info-card">
+        <h2>Quiz Overview</h2>
+        {% if quiz.description %}
+        <p style="margin: 1rem 0; color: #666;">{{ quiz.description }}</p>
+        {% endif %}
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-icon">📋</div>
+                <div class="info-label">Total Questions</div>
+                <div class="info-value">{{ total_questions }}</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">⏱️</div>
+                <div class="info-label">Time Limit</div>
+                <div class="info-value">
+                    {% if quiz.time_limit > 0 %}
+                        {{ quiz.time_limit }} min
+                    {% else %}
+                        No Limit
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">🎯</div>
+                <div class="info-label">Passing Score</div>
+                <div class="info-value">{{ quiz.passing_score }}%</div>
+            </div>
+
+            <div class="info-item">
+                <div class="info-icon">🔄</div>
+                <div class="info-label">Attempts Left</div>
+                <div class="info-value">
+                    {% if attempts_left is not None %}
+                        {{ attempts_left }}
+                    {% else %}
+                        Unlimited
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="instructions">
+            <h3>📌 Instructions</h3>
+            <ul>
+                <li>Read each question carefully before answering</li>
+                <li>You must score at least {{ quiz.passing_score }}% to pass</li>
+                {% if quiz.time_limit > 0 %}
+                <li>You have {{ quiz.time_limit }} minutes to complete the quiz</li>
+                {% endif %}
+                <li>Make sure you have completed all course videos before taking the quiz</li>
+                <li>Once submitted, you cannot change your answers</li>
+                {% if quiz.show_correct_answers %}
+                <li>Correct answers will be shown after submission</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        {% if best_score %}
+        <div style="background: #dcfce7; border-left: 4px solid #22c55e; padding: 1.5rem; border-radius: 8px; margin-top: 2rem;">
+            <strong>✅ Best Score: {{ best_score.score }}%</strong> - You have already passed this quiz!
+            <br>You can retake it to improve your score.
+        </div>
+        {% endif %}
+
+        {% if attempts_left is not None and attempts_left == 0 %}
+        <div class="warning-box">
+            <strong>⚠️ No Attempts Left</strong><br>
+            You have used all {{ quiz.max_attempts }} attempts for this quiz.
+        </div>
+        {% endif %}
+    </div>
+
+    {% if attempts_count > 0 %}
+    <div class="previous-attempts">
+        <h3>Previous Attempts</h3>
+        <p style="color: #666; margin-bottom: 1.5rem;">You have attempted this quiz {{ attempts_count }} time{{ attempts_count|pluralize }}.</p>
+    </div>
+    {% endif %}
+
+    <div class="actions">
+        {% if attempts_left is None or attempts_left > 0 %}
+        <a href="{% url 'quiz_take' course.slug %}" class="btn-start">
+            🚀 Start Quiz
+        </a>
+        {% endif %}
+        <a href="{% url 'course_detail' course.slug %}" class="btn-back">
+            ← Back to Course
+        </a>
+    </div>
+</div>
+{% endblock %}

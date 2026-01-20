@@ -749,3 +749,141 @@ class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'subject', 'created_at')
     list_filter = ('subject', 'created_at')
     search_fields = ('name', 'email')
+
+
+# quizz
+# Add to lms/admin.py
+
+from django.contrib import admin
+from .models import (
+    Quiz, Question, Answer, QuizAttempt, 
+    QuizResponse, CourseProgress, Certificate
+)
+
+class AnswerInline(admin.TabularInline):
+    model = Answer
+    extra = 4
+    fields = ['answer_text', 'is_correct', 'order']
+
+class QuestionInline(admin.StackedInline):
+    model = Question
+    extra = 1
+    fields = ['question_text', 'question_type', 'points', 'order', 'explanation']
+    show_change_link = True
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ['title', 'course', 'passing_score', 'time_limit', 'max_attempts', 'is_active']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title', 'course__title']
+    inlines = [QuestionInline]
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('course', 'title', 'description', 'is_active')
+        }),
+        ('Quiz Settings', {
+            'fields': ('passing_score', 'time_limit', 'max_attempts', 'show_correct_answers')
+        }),
+    )
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ['question_text_short', 'quiz', 'question_type', 'points', 'order']
+    list_filter = ['question_type', 'quiz']
+    search_fields = ['question_text']
+    inlines = [AnswerInline]
+    list_editable = ['order']
+    
+    def question_text_short(self, obj):
+        return obj.question_text[:50] + "..." if len(obj.question_text) > 50 else obj.question_text
+    question_text_short.short_description = 'Question'
+
+@admin.register(Answer)
+class AnswerAdmin(admin.ModelAdmin):
+    list_display = ['answer_text_short', 'question', 'is_correct', 'order']
+    list_filter = ['is_correct', 'question__quiz']
+    search_fields = ['answer_text']
+    list_editable = ['is_correct', 'order']
+    
+    def answer_text_short(self, obj):
+        return obj.answer_text[:50] + "..." if len(obj.answer_text) > 50 else obj.answer_text
+    answer_text_short.short_description = 'Answer'
+
+@admin.register(QuizAttempt)
+class QuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ('user', 'quiz', 'score', 'passed', 'started_at', 'completed_at', 'time_taken_display')
+    list_filter = ('passed', 'started_at', 'quiz__course')
+    search_fields = ('user__email', 'quiz__title')
+    readonly_fields = ('started_at', 'completed_at', 'score', 'passed', 'time_taken')
+    date_hierarchy = 'started_at'
+    inlines = []  # Can add QuizResponseInline if needed
+    
+    def time_taken_display(self, obj):
+        if obj.time_taken:
+            minutes = obj.time_taken // 60
+            seconds = obj.time_taken % 60
+            return f"{minutes}m {seconds}s"
+        return "-"
+    time_taken_display.short_description = 'Time Taken'
+    
+    def has_add_permission(self, request):
+        return False  # Quiz attempts should be created by users
+
+@admin.register(QuizResponse)
+class QuizResponseAdmin(admin.ModelAdmin):
+    list_display = ['attempt', 'question', 'is_correct']
+    list_filter = ['attempt__quiz']
+    readonly_fields = ['is_correct']
+
+@admin.register(CourseProgress)
+class CourseProgressAdmin(admin.ModelAdmin):
+    list_display = ('user', 'course', 'progress_percentage', 'quiz_passed', 'is_completed', 'completed_at', 'has_valid_quiz_attempt')
+    list_filter = ('quiz_passed', 'is_completed', 'course')
+    search_fields = ('user__email', 'course__title')
+    readonly_fields = ('progress_percentage', 'completed_at', 'last_quiz_attempt_id', 'completion_details')
+    actions = ['reset_quiz_status', 'recalculate_progress']
+    
+    def has_valid_quiz_attempt(self, obj):
+        return bool(obj.last_quiz_attempt_id)
+    has_valid_quiz_attempt.boolean = True
+    has_valid_quiz_attempt.short_description = 'Valid Quiz Attempt'
+    
+    def completion_details(self, obj):
+        requirements = obj.get_completion_requirements()
+        return format_html("""
+            <strong>Videos:</strong> {} / {} ({:.1f}%)<br>
+            <strong>Quiz Passed:</strong> {}<br>
+            <strong>Requirements Met:</strong> {}<br>
+            <strong>Valid Quiz Attempt:</strong> {}
+        """,
+        requirements['completed_videos'],
+        requirements['total_videos'],
+        requirements['videos_percentage'],
+        "✅ Yes" if requirements['quiz_actually_passed'] else "❌ No",
+        "✅ All" if requirements['requirements_met']['all'] else "❌ Not yet",
+        "✅ Yes" if obj.last_quiz_attempt_id else "❌ No")
+    completion_details.short_description = 'Completion Status'
+    
+    @admin.action(description="Reset quiz status for selected")
+    def reset_quiz_status(self, request, queryset):
+        updated = 0
+        for progress in queryset:
+            progress.reset_quiz_status()
+            updated += 1
+        self.message_user(request, f"Reset quiz status for {updated} records.")
+    
+    @admin.action(description="Recalculate progress for selected")
+    def recalculate_progress(self, request, queryset):
+        updated = 0
+        for progress in queryset:
+            progress.update_progress()
+            progress.check_completion()
+            updated += 1
+        self.message_user(request, f"Recalculated progress for {updated} records.")
+
+@admin.register(Certificate)
+class CertificateAdmin(admin.ModelAdmin):
+    list_display = ['user', 'course', 'certificate_id', 'quiz_score', 'issue_date']
+    list_filter = ['issue_date']
+    search_fields = ['user__email', 'course__title', 'certificate_id']
+    readonly_fields = ['certificate_id', 'issue_date', 'quiz_score']

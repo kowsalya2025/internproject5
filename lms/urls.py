@@ -59,9 +59,23 @@ urlpatterns = [
     path('video/<int:video_id>/complete/', views.mark_video_complete, name='mark_video_complete'),
     path('video/<int:video_id>/progress/', views.update_video_progress, name='update_video_progress'),
     path('video/<int:video_id>/', views.video_player, name='video_player'),
+   
 
       path('enroll/<slug:slug>/', views.enroll_course, name='enroll_course'),
     
     # My Courses
     path('my-courses/', views.my_courses, name='my_courses'),
+
+
+    path('course/<slug:course_slug>/quiz/', views.quiz_start, name='quiz_start'),
+    path('course/<slug:course_slug>/quiz/take/', views.quiz_take, name='quiz_take'),
+    path('quiz/attempt/<int:attempt_id>/submit/', views.quiz_submit, name='quiz_submit'),
+    path('quiz/attempt/<int:attempt_id>/result/', views.quiz_result, name='quiz_result'),
+    
+    # Achievement and Certificate URLs
+    
+    path('achievements/', views.my_achievements, name='my_achievements'),
+    path('certificate/<str:certificate_id>/', views.certificate_detail, name='certificate_detail'),
+    path('certificate/<str:certificate_id>/download/', views.download_certificate, name='download_certificate'),
+    
 ]

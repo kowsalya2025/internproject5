@@ -838,6 +838,21 @@
 
 
             </div>
+
+
+
+             {% if user.is_authenticated %}
+        {% if user_has_access %}
+            {% if course.quiz %}
+            <div style="margin: 2rem 0; text-align: center;">
+                <a href="{% url 'quiz_start' course.slug %}" class="btn btn-primary" style="background: #667eea; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 600;">
+                    📝 Take Course Quiz
+                </a>
+            </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+
         </div>
         {% endfor %}
     </div>
@@ -845,6 +860,8 @@
 
 <!-- Purchase Modal -->
 <div class="modal" id="purchaseModal">
+
+    
     <div class="modal-content">
         <div class="modal-header">
             <h2>Purchase Course</h2>

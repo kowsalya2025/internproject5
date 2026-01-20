@@ -1,0 +1,269 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}Certificate - {{ certificate.course.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .certificate-container {
+        max-width: 900px;
+        margin: 3rem auto;
+        padding: 2rem;
+    }
+
+    .certificate {
+        background: white;
+        border: 15px solid #fbbf24;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .certificate::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(251, 191, 36, 0.05) 10px,
+            rgba(251, 191, 36, 0.05) 20px
+        );
+        pointer-events: none;
+    }
+
+    .certificate-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .certificate-badge {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 1rem;
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        box-shadow: 0 5px 20px rgba(251, 191, 36, 0.3);
+    }
+
+    .certificate-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .certificate-subtitle {
+        font-size: 1.2rem;
+        color: #666;
+        font-style: italic;
+    }
+
+    .certificate-body {
+        text-align: center;
+        margin: 3rem 0;
+        position: relative;
+    }
+
+    .awarded-to {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 1rem;
+    }
+
+    .recipient-name {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #22c55e;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #fbbf24;
+    }
+
+    .course-info {
+        font-size: 1.2rem;
+        color: #333;
+        line-height: 1.8;
+        margin-bottom: 2rem;
+    }
+
+    .course-name {
+        font-weight: bold;
+        color: #667eea;
+        font-size: 1.5rem;
+    }
+
+    .certificate-footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 3rem;
+        padding-top: 2rem;
+        border-top: 2px solid #e5e7eb;
+        position: relative;
+    }
+
+    .signature-block {
+        text-align: center;
+        flex: 1;
+    }
+
+    .signature-line {
+        border-top: 2px solid #333;
+        margin-bottom: 0.5rem;
+        width: 200px;
+        margin: 0 auto 0.5rem;
+    }
+
+    .signature-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .certificate-meta {
+        text-align: center;
+        margin-top: 2rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .meta-item {
+        display: inline-block;
+        margin: 0 1.5rem;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .btn-download {
+        background: #22c55e;
+        color: white;
+        padding: 1rem 3rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .btn-download:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+    }
+
+    .btn-back {
+        background: #6b7280;
+        color: white;
+        padding: 1rem 3rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0 0.5rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .btn-back:hover {
+        background: #4b5563;
+    }
+
+    @media print {
+        .actions {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .certificate {
+            padding: 2rem 1rem;
+        }
+        
+        .certificate-title {
+            font-size: 1.8rem;
+        }
+        
+        .recipient-name {
+            font-size: 1.8rem;
+        }
+        
+        .certificate-footer {
+            flex-direction: column;
+            gap: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="certificate-container">
+    <div class="certificate">
+        <div class="certificate-header">
+            <div class="certificate-badge">🏆</div>
+            <h1 class="certificate-title">Certificate of Completion</h1>
+            <p class="certificate-subtitle">This is to certify that</p>
+        </div>
+
+        <div class="certificate-body">
+            <div class="recipient-name">
+                {{ certificate.user.get_full_name|default:certificate.user.email }}
+            </div>
+            
+            <div class="course-info">
+                has successfully completed the course
+                <br>
+                <span class="course-name">{{ certificate.course.title }}</span>
+                <br>
+                and has demonstrated proficiency in the subject matter
+            </div>
+        </div>
+
+        <div class="certificate-footer">
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <p class="signature-label">Instructor Signature</p>
+            </div>
+            
+            <div class="signature-block">
+                <div class="signature-line"></div>
+                <p class="signature-label">Director Signature</p>
+            </div>
+        </div>
+
+        <div class="certificate-meta">
+            <span class="meta-item">
+                <strong>Certificate ID:</strong> {{ certificate.certificate_id }}
+            </span>
+            <span class="meta-item">
+                <strong>Issue Date:</strong> {{ certificate.issue_date|date:"F d, Y" }}
+            </span>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a href="{% url 'download_certificate' certificate.certificate_id %}" class="btn-download">
+            <i class="fas fa-download"></i> Download Certificate
+        </a>
+        <a href="{% url 'my_achievements' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Achievements
+        </a>
+    </div>
+</div>
+{% endblock %}

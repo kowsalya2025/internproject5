@@ -578,6 +578,28 @@
                 </button>
                 {% endif %}
             </div>
+
+         <!-- quizz -->
+
+{% if not next_video %}
+    {% if course_progress >= 100 and completed_videos == total_videos %}
+        <div style="margin-top: 2rem; text-align: center;">
+            {% if not quiz_passed %}
+                <a href="{% url 'quiz_start' course.slug %}" class="btn btn-warning">📝 Start Quiz</a>
+            {% else %}
+                <span class="badge bg-success">✅ Quiz Passed</span>
+            {% endif %}
+        </div>
+    {% else %}
+        <div style="margin-top: 2rem; text-align: center;">
+            <button class="btn btn-secondary" disabled>📝 Complete all videos to start Quiz</button>
+        </div>
+    {% endif %}
+{% endif %}
+
+
+
+
             
             <!-- Watch Progress -->
             <div class="watch-progress-container">
@@ -836,5 +858,209 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+</script>
+
+
+<script>
+// Add this script to your video player template
+// This tracks when a video is completed
+
+document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('video-player');
+    const videoId = "{{ video.id }}"; // From Django template
+    let hasMarkedComplete = false;
+
+    if (video) {
+        // Method 1: Mark complete when video reaches 90% or more
+        video.addEventListener('timeupdate', function() {
+            const percentWatched = (video.currentTime / video.duration) * 100;
+            
+            if (percentWatched >= 90 && !hasMarkedComplete) {
+                markVideoComplete(videoId);
+                hasMarkedComplete = true;
+            }
+        });
+
+        // Method 2: Mark complete when video ends
+        video.addEventListener('ended', function() {
+            if (!hasMarkedComplete) {
+                markVideoComplete(videoId);
+                hasMarkedComplete = true;
+            }
+        });
+    }
+});
+
+function markVideoComplete(videoId) {
+    // Send AJAX request to mark video as complete
+    fetch(`/video/${videoId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Video marked as complete');
+            
+            // Update progress bar if exists
+            if (data.progress_percentage) {
+                updateProgressBar(data.progress_percentage);
+            }
+            
+            // Show certificate notification if course is completed (videos + quiz passed)
+            if (data.course_completed && data.certificate_id) {
+                showCertificateNotification(data.certificate_id);
+            }
+            // Show quiz notification if all videos are done but quiz not yet passed
+            else if (data.all_videos_completed && data.quiz_required && !data.quiz_passed) {
+                // Get course slug from URL or data attribute
+                const courseSlug = document.querySelector('[data-course-slug]')?.dataset.courseSlug;
+                if (courseSlug) {
+                    showQuizNotification(courseSlug);
+                }
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showCertificateNotification(certificateId) {
+    // Create a beautiful notification
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 10000;
+            max-width: 500px;
+        ">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+            <h2 style="color: #22c55e; margin-bottom: 1rem;">Congratulations!</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;">
+                You've completed this course and earned a certificate!
+            </p>
+            <a href="/certificate/${certificateId}/" style="
+                background: #22c55e;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.5rem;
+            ">View Certificate</a>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #6b7280;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+            ">Close</button>
+        </div>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        " onclick="this.parentElement.remove()"></div>
+    `;
+    document.body.appendChild(notification);
+}
+
+function showQuizNotification(courseSlug) {
+    // Show notification to take quiz
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 10000;
+            max-width: 500px;
+        ">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎓</div>
+            <h2 style="color: #667eea; margin-bottom: 1rem;">All Videos Completed!</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;">
+                Great job! Now take the quiz to earn your certificate.
+            </p>
+            <a href="/course/${courseSlug}/quiz/" style="
+                background: #667eea;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.5rem;
+            ">Take Quiz</a>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #6b7280;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+            ">Later</button>
+        </div>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        " onclick="this.parentElement.remove()"></div>
+    `;
+    document.body.appendChild(notification);
+}
+
+function updateProgressBar(percentage) {
+    const progressBar = document.querySelector('.progress-bar');
+    if (progressBar) {
+        progressBar.style.width = percentage + '%';
+    }
+    
+    const progressText = document.querySelector('.progress-text');
+    if (progressText) {
+        progressText.textContent = Math.round(percentage) + '%';
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

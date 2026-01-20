@@ -24,9 +24,8 @@
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 20; /* FIXED */
+    z-index: 20;
 }
-
 
 .lms-sidebar .course-header {
     padding: 1.5rem;
@@ -205,26 +204,31 @@
 /* ---------- Main Content Area ---------- */
 .main-content {
     flex: 1;
-    margin-left: 350px; /* Same as sidebar width */
-    padding: 1.5rem;
+    margin-left: 200px;
+    padding: 2rem;
     min-height: 100vh;
+    background-color: #f9fafb;
 }
 
-/* ---------- Video Player Container ---------- */
+/* ---------- LARGER Video Player Container ---------- */
 .video-player-container {
     background: white;
     border-radius: 1rem;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     margin-bottom: 1.5rem;
+    max-width: 1200px; /* Increased max width */
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
 
+/* ---------- LARGER Video Player ---------- */
 .video-wrapper {
-   
     background: #000;
     position: relative;
     padding-top: 56.25%; /* 16:9 Aspect Ratio */
-    height: 0;
+    width: 100%;
 }
 
 .video-wrapper iframe,
@@ -239,20 +243,20 @@
 
 /* ---------- Video Info ---------- */
 .video-info {
-    padding: 1.5rem;
+    padding: 2rem; /* Increased padding */
 }
 
 .video-info h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem; /* Larger font */
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     color: #111827;
 }
 
 .video-description {
     color: #6b7280;
     line-height: 1.6;
-    font-size: 0.9375rem;
+    font-size: 1rem; /* Larger font */
 }
 
 /* ---------- Buttons ---------- */
@@ -260,17 +264,17 @@
     display: flex;
     gap: 1rem;
     margin-top: 1.5rem;
-    padding: 0 1.5rem 1.5rem;
+    padding: 0 2rem 2rem; /* Increased padding */
 }
 
 .video-controls button,
 .video-controls a {
     flex: 1;
-    height: 48px;
+    height: 52px; /* Slightly larger */
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9375rem;
+    font-size: 1rem; /* Larger font */
     font-weight: 500;
     border-radius: 0.75rem;
     transition: all 0.2s ease;
@@ -321,7 +325,7 @@
 
 /* ---------- Watch Progress ---------- */
 .watch-progress-container {
-    padding: 1rem 1.5rem 1.5rem;
+    padding: 1.5rem 2rem 2rem; /* Increased padding */
     border-top: 1px solid #e5e7eb;
 }
 
@@ -329,8 +333,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
-    font-size: 0.875rem;
+    margin-bottom: 1rem; /* Increased margin */
+    font-size: 1rem; /* Larger font */
     color: #4b5563;
 }
 
@@ -341,7 +345,7 @@
 .watch-progress {
     background-color: #e5e7eb;
     border-radius: 9999px;
-    height: 10px;
+    height: 12px; /* Thicker progress bar */
     width: 100%;
     overflow: hidden;
 }
@@ -359,7 +363,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    font-size: 0.6875rem;
+    font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
     border-radius: 9999px;
     margin-left: 0.5rem;
@@ -383,16 +387,17 @@
 
 /* ---------- Scrollbar ---------- */
 .lms-sidebar::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .lms-sidebar::-webkit-scrollbar-track {
     background: #f1f1f1;
+    border-radius: 4px;
 }
 
 .lms-sidebar::-webkit-scrollbar-thumb {
     background: #c1c1c1;
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 .lms-sidebar::-webkit-scrollbar-thumb:hover {
@@ -400,7 +405,7 @@
 }
 
 /* ---------- Mobile Responsive ---------- */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .main-container {
         flex-direction: column;
     }
@@ -410,10 +415,32 @@
         width: 100%;
         height: auto;
         max-height: 60vh;
+        top: 0;
     }
     
     .main-content {
+        width: 100%;
         margin-left: 0;
+        padding: 1rem;
+    }
+    
+    .video-player-container {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .video-controls {
+        flex-direction: column;
+    }
+    
+    .video-info h1 {
+        font-size: 1.5rem;
+    }
+    
+    .video-controls button,
+    .video-controls a {
+        height: 48px;
     }
 }
 </style>
@@ -458,7 +485,8 @@
                             <i class="fas fa-check-circle"></i> Complete
                             {% elif day.progress_percentage > 0 %}
                             <i class="fas fa-spinner"></i> {{ day.progress_percentage|floatformat:0 }}%
-                
+                            {% else %}
+                            <i class="far fa-circle"></i> Not Started
                             {% endif %}
                         </span>
                     </div>
@@ -466,6 +494,7 @@
                 </div>
                 <div class="day-videos {% if video.curriculum_day.id == day.id %}open{% endif %}">
                     {% for vid in day.videos %}
+                    {% if vid.id %}  <!-- Only show videos with valid IDs -->
                     <a href="{% if vid.is_accessible %}{% url 'video_player' vid.id %}{% else %}#{% endif %}"
                        class="video-item {% if vid.id == video.id %}active{% elif vid.is_completed %}completed{% elif not vid.is_accessible %}locked{% endif %}"
                        data-video-id="{{ vid.id }}"
@@ -478,6 +507,7 @@
                         <span class="video-title">{{ vid.title }}</span>
                         <span class="video-duration">{{ vid.duration }} min</span>
                     </a>
+                    {% endif %}
                     {% endfor %}
                 </div>
             </div>
@@ -532,10 +562,10 @@
                 </button>
                 {% endif %}
 
-                <button id="mark-complete-btn" class="btn-complete {% if video.is_completed %}completed{% endif %}" 
-                        {% if video.is_completed %}disabled{% endif %}>
-                    <i class="fas {% if video.is_completed %}fa-check-circle{% else %}fa-check{% endif %}"></i>
-                    {% if video.is_completed %}Completed{% else %}Mark as Complete{% endif %}
+                <button id="mark-complete-btn" class="btn-complete {% if is_completed %}completed{% endif %}" 
+                        {% if is_completed %}disabled{% endif %}>
+                    <i class="fas {% if is_completed %}fa-check-circle{% else %}fa-check{% endif %}"></i>
+                    {% if is_completed %}Completed{% else %}Mark as Complete{% endif %}
                 </button>
 
                 {% if next_video %}
@@ -548,12 +578,34 @@
                 </button>
                 {% endif %}
             </div>
+
+         <!-- quizz -->
+
+{% if not next_video %}
+    {% if course_progress >= 100 and completed_videos == total_videos %}
+        <div style="margin-top: 2rem; text-align: center;">
+            {% if not quiz_passed %}
+                <a href="{% url 'quiz_start' course.slug %}" class="btn btn-warning">📝 Start Quiz</a>
+            {% else %}
+                <span class="badge bg-success">✅ Quiz Passed</span>
+            {% endif %}
+        </div>
+    {% else %}
+        <div style="margin-top: 2rem; text-align: center;">
+            <button class="btn btn-secondary" disabled>📝 Complete all videos to start Quiz</button>
+        </div>
+    {% endif %}
+{% endif %}
+
+
+
+
             
             <!-- Watch Progress -->
             <div class="watch-progress-container">
                 <div class="watch-progress-label">
                     <span>Watch Progress</span>
-                    <span id="watch-percentage">{{ video.watched_percentage|default:0 }}%</span>
+                    <span id="watch-percentage">{{ progress_percentage|default:0 }}%</span>
                 </div>
                 <div class="watch-progress">
                     <div id="watch-progress-fill" class="watch-progress-fill"></div>
@@ -598,8 +650,8 @@ document.querySelectorAll('.day-header').forEach(header => {
 });
 
 // ---------- Video Watch Progress ----------
-let videoWatched = {% if video.is_completed %}true{% else %}false{% endif %};
-let watchedPercentage = {% if video.watched_percentage %}{{ video.watched_percentage }}{% else %}0{% endif %};
+let videoWatched = {% if is_completed %}true{% else %}false{% endif %};
+let watchedPercentage = {% if progress_percentage %}{{ progress_percentage }}{% else %}0{% endif %};
 const videoPlayer = document.getElementById('video-player');
 const markCompleteBtn = document.getElementById('mark-complete-btn');
 const watchProgressFill = document.getElementById('watch-progress-fill');
@@ -639,7 +691,7 @@ if (videoPlayer && !videoWatched) {
 
 // ---------- Mark as Complete ----------
 if (markCompleteBtn && !markCompleteBtn.disabled) {
-    markCompleteBtn.addEventListener('click', () => {
+    markCompleteBtn.addEventListener('click', async () => {
         if (!videoWatched && watchedPercentage < 90) {
             return alert('Please watch at least 90% of the video to mark it as complete.');
         }
@@ -649,44 +701,74 @@ if (markCompleteBtn && !markCompleteBtn.disabled) {
         markCompleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
         markCompleteBtn.disabled = true;
         
-        fetch(`/lms/video/{{ video.id }}/complete/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken
-            },
-            body: JSON.stringify({ 
-                watched_percentage: Math.round(watchedPercentage),
-                mark_complete: true 
-            })
-        })
-        .then(response => {
+        try {
+            // Use Django template to get the correct URL
+            // In your HTML template, you need to pass the video ID
+            const videoId = {{ video.id|safe }};
+            
+            // Single correct URL using Django's URL pattern
+            const url = `/video/${videoId}/complete/`;
+            console.log('Using URL:', url);
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'  // Add this header
+                },
+                body: JSON.stringify({ 
+                    progress_percentage: Math.round(watchedPercentage),
+                    mark_complete: true 
+                })
+            });
+            
+            console.log('Response status:', response.status);
+            
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
+            
+            const data = await response.json();
+            console.log('Success data:', data);
+            
+            if (data.success || data.status === 'success') {
                 // Update button state
                 markCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Completed';
                 markCompleteBtn.classList.add('completed');
                 markCompleteBtn.disabled = true;
                 
+                // Update progress display
+                watchedPercentage = 100;
+                if (watchProgressFill) {
+                    watchProgressFill.style.width = '100%';
+                }
+                if (watchPercentageText) {
+                    watchPercentageText.textContent = '100%';
+                }
+                
+                // Success message
+                alert('✓ Video marked as complete!');
+                
                 // Reload page after a short delay to update progress
                 setTimeout(() => {
                     window.location.reload();
-                }, 1000);
+                }, 1500);
             } else {
-                throw new Error('Mark complete failed');
+                throw new Error(data.error || data.message || 'Server returned success: false');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             console.error('Error:', error);
             markCompleteBtn.innerHTML = originalText;
             markCompleteBtn.disabled = false;
-            alert('Failed to mark video as complete. Please try again.');
-        });
+            
+            if (error.message.includes('404')) {
+                alert('Error: URL not found (404). Please check:\n1. URL pattern is configured in urls.py\n2. mark_video_complete view exists\n3. URL matches the pattern exactly');
+            } else {
+                alert('Failed to mark video as complete. Error: ' + error.message);
+            }
+        }
     });
 }
 
@@ -776,5 +858,209 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+</script>
+
+
+<script>
+// Add this script to your video player template
+// This tracks when a video is completed
+
+document.addEventListener('DOMContentLoaded', function() {
+    const video = document.getElementById('video-player');
+    const videoId = "{{ video.id }}"; // From Django template
+    let hasMarkedComplete = false;
+
+    if (video) {
+        // Method 1: Mark complete when video reaches 90% or more
+        video.addEventListener('timeupdate', function() {
+            const percentWatched = (video.currentTime / video.duration) * 100;
+            
+            if (percentWatched >= 90 && !hasMarkedComplete) {
+                markVideoComplete(videoId);
+                hasMarkedComplete = true;
+            }
+        });
+
+        // Method 2: Mark complete when video ends
+        video.addEventListener('ended', function() {
+            if (!hasMarkedComplete) {
+                markVideoComplete(videoId);
+                hasMarkedComplete = true;
+            }
+        });
+    }
+});
+
+function markVideoComplete(videoId) {
+    // Send AJAX request to mark video as complete
+    fetch(`/video/${videoId}/complete/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            video_id: videoId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Video marked as complete');
+            
+            // Update progress bar if exists
+            if (data.progress_percentage) {
+                updateProgressBar(data.progress_percentage);
+            }
+            
+            // Show certificate notification if course is completed (videos + quiz passed)
+            if (data.course_completed && data.certificate_id) {
+                showCertificateNotification(data.certificate_id);
+            }
+            // Show quiz notification if all videos are done but quiz not yet passed
+            else if (data.all_videos_completed && data.quiz_required && !data.quiz_passed) {
+                // Get course slug from URL or data attribute
+                const courseSlug = document.querySelector('[data-course-slug]')?.dataset.courseSlug;
+                if (courseSlug) {
+                    showQuizNotification(courseSlug);
+                }
+            }
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showCertificateNotification(certificateId) {
+    // Create a beautiful notification
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 10000;
+            max-width: 500px;
+        ">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+            <h2 style="color: #22c55e; margin-bottom: 1rem;">Congratulations!</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;">
+                You've completed this course and earned a certificate!
+            </p>
+            <a href="/certificate/${certificateId}/" style="
+                background: #22c55e;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.5rem;
+            ">View Certificate</a>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #6b7280;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+            ">Close</button>
+        </div>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        " onclick="this.parentElement.remove()"></div>
+    `;
+    document.body.appendChild(notification);
+}
+
+function showQuizNotification(courseSlug) {
+    // Show notification to take quiz
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 10000;
+            max-width: 500px;
+        ">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎓</div>
+            <h2 style="color: #667eea; margin-bottom: 1rem;">All Videos Completed!</h2>
+            <p style="color: #666; margin-bottom: 1.5rem;">
+                Great job! Now take the quiz to earn your certificate.
+            </p>
+            <a href="/course/${courseSlug}/quiz/" style="
+                background: #667eea;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                text-decoration: none;
+                display: inline-block;
+                margin-right: 0.5rem;
+            ">Take Quiz</a>
+            <button onclick="this.parentElement.parentElement.remove()" style="
+                background: #6b7280;
+                color: white;
+                padding: 0.75rem 2rem;
+                border-radius: 8px;
+                border: none;
+                cursor: pointer;
+            ">Later</button>
+        </div>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        " onclick="this.parentElement.remove()"></div>
+    `;
+    document.body.appendChild(notification);
+}
+
+function updateProgressBar(percentage) {
+    const progressBar = document.querySelector('.progress-bar');
+    if (progressBar) {
+        progressBar.style.width = percentage + '%';
+    }
+    
+    const progressText = document.querySelector('.progress-text');
+    if (progressText) {
+        progressText.textContent = Math.round(percentage) + '%';
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 </script>
 {% endblock %}

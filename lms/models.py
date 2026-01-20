@@ -7,6 +7,8 @@ from ckeditor.fields import RichTextField
 from django.utils import timezone
 import uuid
 
+from urllib3 import request
+
 
 # ============================
 # USER MANAGER
@@ -911,3 +913,402 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.subject}"
+
+
+
+# quezz
+from django.db import models
+from django.conf import settings
+from django.utils import timezone
+import uuid
+
+class CourseProgress(models.Model):
+    """Track user's progress through a course"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    completed_videos = models.ManyToManyField('Video', blank=True)
+    progress_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    quiz_passed = models.BooleanField(default=False)
+    last_quiz_attempt_id = models.CharField(max_length=100, blank=True, null=True, help_text="ID of the quiz attempt that passed")
+    
+    
+    class Meta:
+        unique_together = ['user', 'course']
+        verbose_name_plural = 'Course Progress'
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.course.title} ({self.progress_percentage}%)"
+    
+    def update_progress(self):
+        """Calculate and update course progress"""
+        # Get total videos count through curriculum days
+        total_videos = Video.objects.filter(
+            curriculum_day__course=self.course
+        ).count()
+        
+        if total_videos > 0:
+            completed = self.completed_videos.count()
+            self.progress_percentage = (completed / total_videos) * 100
+            self.save()
+    
+    def has_passed_quiz_actually(self):
+        """
+        Check if user has actually passed the quiz with a valid attempt
+        Returns True only if:
+        1. quiz_passed is True
+        2. last_quiz_attempt_id is set
+        3. QuizAttempt exists with that ID and is passed
+        """
+        if not self.quiz_passed or not self.last_quiz_attempt_id:
+            return False
+            
+        try:
+            from .models import QuizAttempt  # Import here to avoid circular import
+            attempt = QuizAttempt.objects.get(
+                id=self.last_quiz_attempt_id,
+                user=self.user,
+                quiz__course=self.course,
+                passed=True,
+                completed_at__isnull=False  # Must be completed
+            )
+            return True
+        except (QuizAttempt.DoesNotExist, ValueError):
+            return False
+    
+    def check_completion(self):
+        """Check if course is fully completed (all videos + quiz passed)"""
+        # Get total videos count through curriculum days
+        total_videos = Video.objects.filter(
+            curriculum_day__course=self.course
+        ).count()
+        
+        completed_videos = self.completed_videos.count()
+        
+        # Only mark as completed if:
+        # 1. All videos are completed
+        # 2. Quiz is actually passed (not just flagged)
+        # 3. Not already marked as completed
+        if total_videos > 0:
+            videos_completed = completed_videos == total_videos
+            quiz_actually_passed = self.has_passed_quiz_actually()
+            
+            if videos_completed and quiz_actually_passed and not self.is_completed:
+                self.is_completed = True
+                self.completed_at = timezone.now()
+                self.save()
+                
+                # Generate certificate
+                from .models import Certificate
+                Certificate.objects.get_or_create(
+                    user=self.user,
+                    course=self.course,
+                    defaults={
+                        'issue_date': timezone.now(),
+                        'certificate_id': uuid.uuid4().hex[:12].upper(),
+                        'quiz_score': self.get_quiz_score()  # Store actual quiz score
+                    }
+                )
+                return True
+        return False
+    
+    def get_quiz_score(self):
+        """Get the actual quiz score from the passed attempt"""
+        if not self.last_quiz_attempt_id:
+            return None
+            
+        try:
+            from .models import QuizAttempt
+            attempt = QuizAttempt.objects.get(id=self.last_quiz_attempt_id)
+            return attempt.score
+        except QuizAttempt.DoesNotExist:
+            return None
+    
+    def mark_quiz_passed(self, quiz_attempt):
+        """
+        Mark quiz as passed ONLY when user actually passes a quiz attempt
+        This should be called from QuizAttempt.calculate_score() only
+        """
+        if not quiz_attempt.passed:
+            return False
+            
+        # Verify this is a valid completed attempt
+        if not quiz_attempt.completed_at:
+            return False
+            
+        # Verify the attempt belongs to this user and course
+        if (quiz_attempt.user != self.user or 
+            quiz_attempt.quiz.course != self.course):
+            return False
+        
+        # Mark quiz as passed
+        self.quiz_passed = True
+        self.last_quiz_attempt_id = str(quiz_attempt.id)
+        self.save()
+        
+        # Check if course can now be completed
+        self.check_completion()
+        return True
+    
+    def reset_quiz_status(self):
+        """Reset quiz status if needed (e.g., retake)"""
+        self.quiz_passed = False
+        self.last_quiz_attempt_id = None
+        self.is_completed = False
+        self.completed_at = None
+        self.save()
+    
+    def get_total_videos_count(self):
+        """Helper to get total videos count"""
+        return Video.objects.filter(
+            curriculum_day__course=self.course
+        ).count()
+    
+    def get_completed_videos_count(self):
+        """Helper to get completed videos count"""
+        return self.completed_videos.count()
+    
+    def get_completion_requirements(self):
+        """Get completion requirements status"""
+        total_videos = self.get_total_videos_count()
+        completed_videos = self.get_completed_videos_count()
+        quiz_passed = self.has_passed_quiz_actually()
+        
+        return {
+            'total_videos': total_videos,
+            'completed_videos': completed_videos,
+            'videos_percentage': (completed_videos / total_videos * 100) if total_videos > 0 else 0,
+            'quiz_passed': quiz_passed,
+            'quiz_actually_passed': self.has_passed_quiz_actually(),
+            'is_completed': self.is_completed,
+            'requirements_met': {
+                'videos': completed_videos == total_videos,
+                'quiz': quiz_passed,
+                'all': completed_videos == total_videos and quiz_passed
+            }
+        }
+    
+    def clean(self):
+        """Validate model data"""
+        from django.core.exceptions import ValidationError
+        
+        # If quiz_passed is True, verify we have a valid attempt ID
+        if self.quiz_passed and not self.last_quiz_attempt_id:
+            raise ValidationError({
+                'quiz_passed': 'Cannot mark quiz as passed without a valid quiz attempt ID'
+            })
+        
+        # If last_quiz_attempt_id is set, verify the attempt exists and is passed
+        if self.last_quiz_attempt_id:
+            try:
+                from .models import QuizAttempt
+                attempt = QuizAttempt.objects.get(id=self.last_quiz_attempt_id)
+                
+                # Verify it's for the same user and course
+                if attempt.user != self.user:
+                    raise ValidationError({
+                        'last_quiz_attempt_id': 'Quiz attempt does not belong to this user'
+                    })
+                
+                if attempt.quiz.course != self.course:
+                    raise ValidationError({
+                        'last_quiz_attempt_id': 'Quiz attempt is not for this course'
+                    })
+                
+                # If quiz_passed is True but attempt is not passed, it's invalid
+                if self.quiz_passed and not attempt.passed:
+                    raise ValidationError({
+                        'quiz_passed': 'Quiz attempt is not marked as passed'
+                    })
+                    
+            except QuizAttempt.DoesNotExist:
+                raise ValidationError({
+                    'last_quiz_attempt_id': 'Quiz attempt does not exist'
+                })
+    
+    def save(self, *args, **kwargs):
+        """Override save to run validation and prevent invalid states"""
+        # Run validation
+        self.clean()
+        
+        # Prevent is_completed being True without actual completion
+        if self.is_completed:
+            requirements = self.get_completion_requirements()
+            if not requirements['requirements_met']['all']:
+                self.is_completed = False
+                self.completed_at = None
+        
+        super().save(*args, **kwargs)
+
+
+class Quiz(models.Model):
+    """Quiz for a course"""
+    course = models.OneToOneField('Course', on_delete=models.CASCADE, related_name='quiz')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    passing_score = models.IntegerField(default=70, help_text="Minimum percentage to pass")
+    time_limit = models.IntegerField(default=30, help_text="Time limit in minutes (0 for no limit)")
+    max_attempts = models.IntegerField(default=3, help_text="Maximum number of attempts (0 for unlimited)")
+    show_correct_answers = models.BooleanField(default=True, help_text="Show correct answers after completion")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name_plural = 'Quizzes'
+    
+    def __str__(self):
+        return f"Quiz: {self.title} ({self.course.title})"
+    
+    def get_total_questions(self):
+        return self.questions.count()
+
+
+class Question(models.Model):
+    QUESTION_TYPES = [
+        ('single', 'Single Choice'),
+        ('multiple', 'Multiple Choice'),
+        ('true_false', 'True/False'),
+    ]
+    
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES, default='single')
+    points = models.IntegerField(default=1)
+    order = models.IntegerField(default=0)
+    explanation = models.TextField(blank=True, help_text="Explanation shown after answering")
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"Q{self.order}: {self.question_text[:50]}"
+
+
+class Answer(models.Model):
+    """Answer options for questions"""
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    answer_text = models.CharField(max_length=500)
+    is_correct = models.BooleanField(default=False)
+    order = models.IntegerField(default=0)
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"{self.answer_text} ({'Correct' if self.is_correct else 'Incorrect'})"
+
+
+class QuizAttempt(models.Model):
+    """Track quiz attempts by users"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    passed = models.BooleanField(default=False)
+    time_taken = models.IntegerField(null=True, blank=True, help_text="Time taken in seconds")
+    
+    class Meta:
+        ordering = ['-started_at']
+    
+    def __str__(self):
+        return f"{self.user.email} - {self.quiz.title} - Score: {self.score}%"
+
+    
+    def calculate_score(self):
+        """Calculate the score for this attempt"""
+        # Ensure the attempt is actually completed
+        if not self.completed_at:
+            raise ValueError("Cannot calculate score for incomplete attempt")
+        
+        total_points = sum(q.points for q in self.quiz.questions.all())
+        if total_points == 0:
+            self.score = 0
+            self.passed = False
+            self.save()
+            return 0
+        
+        earned_points = 0
+        total_responses = self.responses.count()
+        total_questions = self.quiz.questions.count()
+        
+        # Calculate earned points
+        for response in self.responses.all():
+            if response.is_correct():
+                earned_points += response.question.points
+        
+        # Calculate percentage score
+        score = (earned_points / total_points) * 100
+        self.score = round(score, 2)
+        self.passed = score >= self.quiz.passing_score
+        self.save()
+        
+        # Update course progress if quiz is passed
+        if self.passed:
+            from .models import CourseProgress
+            progress, created = CourseProgress.objects.get_or_create(
+                user=self.user,
+                course=self.quiz.course
+            )
+            
+            # Use the new method to mark quiz as passed
+            progress.mark_quiz_passed(self)
+        
+        return self.score
+
+
+class QuizResponse(models.Model):
+    """User's response to a quiz question"""
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='responses')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected_answers = models.ManyToManyField(Answer)
+    
+    def __str__(self):
+        return f"{self.attempt.user.email} - {self.question.question_text[:30]}"
+    
+    def is_correct(self):
+        """Check if the response is correct"""
+        correct_answers = set(self.question.answers.filter(is_correct=True))
+        selected_answers = set(self.selected_answers.all())
+        
+        if self.question.question_type == 'single' or self.question.question_type == 'true_false':
+            return len(selected_answers) == 1 and selected_answers == correct_answers
+        elif self.question.question_type == 'multiple':
+            return selected_answers == correct_answers
+        return False
+
+
+class Certificate(models.Model):
+    """Certificate awarded upon course completion"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    certificate_id = models.CharField(max_length=50, unique=True, editable=False)
+    issue_date = models.DateTimeField(auto_now_add=True)
+    quiz_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    
+    class Meta:
+        unique_together = ['user', 'course']
+        ordering = ['-issue_date']
+    
+    def __str__(self):
+        return f"Certificate - {self.user.email} - {self.course.title}"
+    
+    def save(self, *args, **kwargs):
+        if not self.certificate_id:
+            self.certificate_id = uuid.uuid4().hex[:12].upper()
+        
+        # Get quiz score if available
+        if not self.quiz_score:
+            try:
+                quiz_attempt = QuizAttempt.objects.filter(
+                    user=self.user,
+                    quiz__course=self.course,
+                    passed=True
+                ).order_by('-score').first()
+                if quiz_attempt:
+                    self.quiz_score = quiz_attempt.score
+            except:
+                pass
+        
+        super().save(*args, **kwargs)

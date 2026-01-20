@@ -1,0 +1,464 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}My Achievements - Vetri Digital College{% endblock %}
+
+{% block extra_css %}
+<style>
+    .achievements-section {
+        padding: 3rem 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .stat-card.green {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+
+    .stat-card.orange {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .certificates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .certificate-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: 2px solid #fbbf24;
+    }
+
+    .certificate-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .certificate-header {
+        background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        padding: 1.5rem;
+        text-align: center;
+        color: white;
+    }
+
+    .certificate-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .certificate-body {
+        padding: 1.5rem;
+    }
+
+    .certificate-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+
+    .certificate-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .info-label {
+        font-weight: 500;
+    }
+
+    .certificate-actions {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .btn-view, .btn-download {
+        flex: 1;
+        padding: 0.75rem;
+        border-radius: 8px;
+        text-align: center;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-view {
+        background: #22c55e;
+        color: white;
+        border: none;
+    }
+
+    .btn-view:hover {
+        background: #16a34a;
+        transform: translateY(-2px);
+    }
+
+    .btn-download {
+        background: #f3f4f6;
+        color: #333;
+        border: none;
+    }
+
+    .btn-download:hover {
+        background: #e5e7eb;
+        transform: translateY(-2px);
+    }
+
+    .progress-section {
+        margin-top: 3rem;
+        padding-top: 3rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .progress-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+
+    .progress-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .progress-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        flex: 1;
+    }
+
+    .progress-percent {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #22c55e;
+        min-width: 60px;
+        text-align: right;
+    }
+
+    .progress-bar-container {
+        background: #e5e7eb;
+        height: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: #f9fafb;
+        border-radius: 12px;
+        margin: 2rem 0;
+    }
+
+    .empty-state-icon {
+        font-size: 5rem;
+        color: #e5e5e5;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .empty-state p {
+        color: #666;
+        margin-bottom: 2rem;
+    }
+
+    .empty-state a {
+        display: inline-block;
+        padding: 0.75rem 1.5rem;
+        background: #22c55e;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .empty-state a:hover {
+        background: #16a34a;
+        transform: translateY(-2px);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #fbbf24;
+        color: #fff;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+
+    .certificate-status {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #f0fdf4;
+        border-radius: 6px;
+        border-left: 4px solid #22c55e;
+    }
+
+    .certificate-status.completed {
+        background: #f0fdf4;
+        border-left-color: #22c55e;
+    }
+
+    .certificate-status.in-progress {
+        background: #fffbeb;
+        border-left-color: #f59e0b;
+    }
+
+    @media (max-width: 768px) {
+        .achievements-section {
+            padding: 2rem 1rem;
+        }
+        
+        .certificates-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+        
+        .certificate-actions {
+            flex-direction: column;
+        }
+        
+        .progress-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        
+        .progress-percent {
+            align-self: flex-end;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="achievements-section">
+    <h1 class="section-title">🏆 My Achievements</h1>
+
+    <!-- Stats Overview -->
+    <!-- In your template -->
+<div class="stats-grid">
+    <div class="stat-card green">
+        <div class="stat-number">{{ total_certificates|default:0 }}</div>
+        <div class="stat-label">Certificates Earned</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ completed_courses|default:0 }}</div>
+        <div class="stat-label">Courses Completed</div>
+    </div>
+    <div class="stat-card orange">
+        <div class="stat-number">{{ in_progress_courses|default:0 }}</div>
+        <div class="stat-label">Courses In Progress</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ total_quiz_passed|default:0 }}</div>
+        <div class="stat-label">Quizzes Passed</div>
+    </div>
+</div>
+
+    <!-- Certificates Section -->
+    {% if certificates %}
+    <h2 class="section-title">📜 Your Certificates</h2>
+    <div class="certificates-grid">
+        {% for certificate in certificates %}
+        <div class="certificate-card">
+            <div class="certificate-header">
+                <div class="certificate-icon">
+                    {% if certificate.quiz_score >= 90 %}
+                    🥇
+                    {% elif certificate.quiz_score >= 75 %}
+                    🥈
+                    {% else %}
+                    🏆
+                    {% endif %}
+                </div>
+                <h3>Certificate of Completion</h3>
+            </div>
+            <div class="certificate-body">
+                <h4 class="certificate-title">{{ certificate.course.title }}</h4>
+                <div class="certificate-info">
+                    <div class="info-row">
+                        <span class="info-label">Certificate ID:</span>
+                        <span>{{ certificate.certificate_id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Issued Date:</span>
+                        <span>{{ certificate.issue_date|date:"F d, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Recipient:</span>
+                        <span>{{ request.user.get_full_name|default:request.user.username|default:request.user.email }}</span>
+                    </div>
+                    {% if certificate.quiz_score %}
+                    <div class="info-row">
+                        <span class="info-label">Quiz Score:</span>
+                        <span>{{ certificate.quiz_score }}%</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="certificate-status completed">
+                    ✅ Course completed successfully
+                </div>
+                <div class="certificate-actions">
+                    <a href="{% url 'certificate_detail' certificate.certificate_id %}" class="btn-view">
+                        <i class="fas fa-eye"></i> View Certificate
+                    </a>
+                    <a href="{% url 'download_certificate' certificate.certificate_id %}" class="btn-download">
+                        <i class="fas fa-download"></i> Download PDF
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="fas fa-award"></i>
+        </div>
+        <h3>No Certificates Yet</h3>
+        <p>Complete courses and pass quizzes to earn certificates!</p>
+        {% if progress_data %}
+        <p>You have {{ in_progress_courses|default:0 }} courses in progress. Keep going!</p>
+        {% endif %}
+        <a href="{% url 'courses' %}" class="btn-view" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-book"></i> Browse Courses
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Progress Section -->
+    {% if progress_data %}
+    <div class="progress-section">
+        <h2 class="section-title">📊 Course Progress</h2>
+        {% for progress in progress_data %}
+        <div class="progress-card">
+            <div class="progress-header">
+                <h4 class="progress-title">
+                    {{ progress.course.title }}
+                    {% if progress.is_completed %}
+                    <span class="badge">Completed</span>
+                    {% elif progress.quiz_passed %}
+                    <span class="badge" style="background: #22c55e;">Quiz Passed</span>
+                    {% endif %}
+                </h4>
+                <span class="progress-percent">{{ progress.progress_percentage|floatformat:0 }}%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div class="progress-bar" style="width: {{ progress.progress_percentage|floatformat:0 }}%"></div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.9rem; color: #666;">
+                <span>Completed: {{ progress.completed_videos.count }} of {{ progress.course.total_videos|default:0 }} videos</span>
+                {% if not progress.quiz_passed and progress.progress_percentage >= 100 %}
+                <span style="color: #f59e0b; display: block; margin-top: 0.25rem;">
+                    ⚠️ Complete the quiz to earn certificate
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="margin-top: 3rem;">
+        <div class="empty-state-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <h3>No Course Progress Yet</h3>
+        <p>Start learning to track your progress here!</p>
+        <a href="{% url 'courses' %}" class="btn-view" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-play"></i> Start Learning
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,335 @@
+{% extends 'lms/base.html' %}
+{% load static %}
+
+{% block title %}Taking Quiz - {{ quiz.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .quiz-taking-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .quiz-timer {
+        position: sticky;
+        top: 80px;
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+    }
+
+    .timer {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #22c55e;
+    }
+
+    .timer.warning {
+        color: #f59e0b;
+    }
+
+    .timer.danger {
+        color: #ef4444;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .question-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+    }
+
+    .question-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+    }
+
+    .question-number {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .question-text {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+    }
+
+    .question-type {
+        font-size: 0.9rem;
+        color: #666;
+        font-style: italic;
+        margin-bottom: 1.5rem;
+    }
+
+    .answers-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .answer-option {
+        margin-bottom: 1rem;
+    }
+
+    .answer-option label {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: #f9fafb;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .answer-option label:hover {
+        background: #f3f4f6;
+        border-color: #667eea;
+    }
+
+    .answer-option input[type="radio"],
+    .answer-option input[type="checkbox"] {
+        margin-right: 1rem;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+
+    .answer-option input[type="radio"]:checked + span,
+    .answer-option input[type="checkbox"]:checked + span {
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .answer-option label:has(input:checked) {
+        background: #ede9fe;
+        border-color: #667eea;
+    }
+
+    .submit-section {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+        text-align: center;
+        margin-top: 3rem;
+    }
+
+    .btn-submit {
+        background: #22c55e;
+        color: white;
+        padding: 1.25rem 4rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-submit:hover {
+        background: #16a34a;
+        transform: scale(1.05);
+    }
+
+    .progress-indicator {
+        margin-bottom: 2rem;
+    }
+
+    .progress-bar {
+        background: #e5e7eb;
+        height: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        text-align: center;
+        margin-top: 0.5rem;
+        color: #666;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-taking-container">
+    {% if quiz.time_limit > 0 %}
+    <div class="quiz-timer">
+        <div>
+            <strong>{{ quiz.title }}</strong>
+        </div>
+        <div>
+            ⏱️ <span id="timer" class="timer"></span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="progress-indicator">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+            <span id="answered-count">0</span> of {{ questions.count }} questions answered
+        </div>
+    </div>
+
+    <form method="POST" action="{% url 'quiz_submit' attempt.id %}" id="quiz-form">
+        {% csrf_token %}
+        
+        {% for question in questions %}
+        <div class="question-card" data-question-id="{{ question.id }}">
+            <span class="question-number">Question {{ forloop.counter }}</span>
+            
+            <div class="question-text">{{ question.question_text }}</div>
+            
+            <div class="question-type">
+                {% if question.question_type == 'single' %}
+                    Select one answer
+                {% elif question.question_type == 'multiple' %}
+                    Select all that apply
+                {% else %}
+                    True or False
+                {% endif %}
+            </div>
+
+            <ul class="answers-list">
+                {% for answer in question.answers.all %}
+                <li class="answer-option">
+                    <label>
+                        {% if question.question_type == 'multiple' %}
+                            <input type="checkbox" 
+                                   name="question_{{ question.id }}" 
+                                   value="{{ answer.id }}"
+                                   onchange="updateProgress()">
+                        {% else %}
+                            <input type="radio" 
+                                   name="question_{{ question.id }}" 
+                                   value="{{ answer.id }}"
+                                   onchange="updateProgress()">
+                        {% endif %}
+                        <span>{{ answer.answer_text }}</span>
+                    </label>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+
+        <div class="submit-section">
+            <p style="color: #666; margin-bottom: 1rem;">
+                Please review your answers before submitting. You cannot change them after submission.
+            </p>
+            <button type="button" onclick="confirmSubmit()" class="btn-submit">
+                ✓ Submit Quiz
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+// Timer functionality
+{% if quiz.time_limit > 0 %}
+let timeLeft = {{ quiz.time_limit }} * 60; // Convert to seconds
+const timerElement = document.getElementById('timer');
+
+function updateTimer() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Change color based on time left
+    if (timeLeft <= 60) {
+        timerElement.className = 'timer danger';
+    } else if (timeLeft <= 300) {
+        timerElement.className = 'timer warning';
+    }
+    
+    if (timeLeft <= 0) {
+        // Auto submit when time runs out
+        document.getElementById('quiz-form').submit();
+    } else {
+        timeLeft--;
+        setTimeout(updateTimer, 1000);
+    }
+}
+
+updateTimer();
+{% endif %}
+
+// Progress tracking
+function updateProgress() {
+    const totalQuestions = {{ questions.count }};
+    let answeredCount = 0;
+    
+    const questionCards = document.querySelectorAll('.question-card');
+    questionCards.forEach(card => {
+        const inputs = card.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        const isAnswered = Array.from(inputs).some(input => input.checked);
+        if (isAnswered) answeredCount++;
+    });
+    
+    const percentage = (answeredCount / totalQuestions) * 100;
+    document.getElementById('progress-fill').style.width = percentage + '%';
+    document.getElementById('answered-count').textContent = answeredCount;
+}
+
+function confirmSubmit() {
+    const totalQuestions = {{ questions.count }};
+    let answeredCount = 0;
+    
+    const questionCards = document.querySelectorAll('.question-card');
+    questionCards.forEach(card => {
+        const inputs = card.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+        const isAnswered = Array.from(inputs).some(input => input.checked);
+        if (isAnswered) answeredCount++;
+    });
+    
+    if (answeredCount < totalQuestions) {
+        const unanswered = totalQuestions - answeredCount;
+        if (!confirm(`You have ${unanswered} unanswered question(s). Do you want to submit anyway?`)) {
+            return;
+        }
+    }
+    
+    if (confirm('Are you sure you want to submit? You cannot change your answers after submission.')) {
+        document.getElementById('quiz-form').submit();
+    }
+}
+
+// Prevent accidental page refresh
+window.addEventListener('beforeunload', function (e) {
+    e.preventDefault();
+    e.returnValue = '';
+});
+</script>
+{% endblock %}

@@ -56,7 +56,7 @@
         overflow: hidden;
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         transition: all 0.3s ease;
-        cursor: pointer;
+        position: relative;
     }
 
     .course-card:hover {
@@ -87,6 +87,22 @@
         margin-bottom: 0.75rem;
     }
 
+    .completed-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #22c55e;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        z-index: 10;
+    }
+
     .course-title {
         font-size: 1.2rem;
         font-weight: 600;
@@ -99,37 +115,102 @@
         color: #666;
         font-size: 0.9rem;
         line-height: 1.6;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
         display: -webkit-box;
-        -webkit-line-clamp: 3;
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
 
-    .course-footer {
+    .progress-section {
+        margin-bottom: 1rem;
+    }
+
+    .progress-bar-container {
+        background: #e5e7eb;
+        height: 8px;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+
+    .progress-text {
+        font-size: 0.85rem;
+        color: #666;
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    .quiz-status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: 0.5rem;
+    }
+
+    .quiz-passed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .quiz-pending {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .course-footer {
+        display: flex;
+        gap: 0.5rem;
         padding-top: 1rem;
         border-top: 1px solid #e5e5e5;
+        flex-wrap: wrap;
     }
 
     .course-button {
         background: #22c55e;
         color: white;
         border: none;
-        padding: 0.75rem 2rem;
+        padding: 0.75rem 1.5rem;
         border-radius: 8px;
         font-weight: 500;
+        font-size: 0.9rem;
         cursor: pointer;
         transition: all 0.3s ease;
         text-decoration: none;
         display: inline-block;
+        text-align: center;
+        flex: 1;
+        min-width: 120px;
     }
 
     .course-button:hover {
         background: #16a34a;
         transform: scale(1.05);
+    }
+
+    .btn-quiz {
+        background: #667eea;
+    }
+
+    .btn-quiz:hover {
+        background: #5568d3;
+    }
+
+    .btn-certificate {
+        background: #f59e0b;
+    }
+
+    .btn-certificate:hover {
+        background: #d97706;
     }
 
     .empty-state {
@@ -182,76 +263,124 @@
         .tab {
             white-space: nowrap;
         }
+
+        .course-footer {
+            flex-direction: column;
+        }
+
+        .course-button {
+            min-width: 100%;
+        }
+    }
+
+    .contact-head {
+        height: 250px;
+        background-color: rgb(23, 221, 205);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .contact-head h1 {
+        margin: 0;
     }
 </style>
 {% endblock %}
 
 {% block content %}
+
+<section class="contact-head">
+    <h1>My Learning</h1>
+</section>
+
 <div class="courses-section">
     <div class="section-header">
         <div class="section-tabs">
-            <div class="tab active" onclick="switchTab('courses')">Courses</div>
-            <div class="tab" onclick="switchTab('achievements')">Achievements</div>
+            <div class="tab active" onclick="switchTab('courses')">My Courses</div>
+            <div class="tab" onclick="switchTab('achievements')">Achievements & Certificates</div>
         </div>
     </div>
 
     <!-- Courses Tab Content -->
     <div id="courses-content" class="tab-content">
-        {% if purchases or enrollments %}
+        {% if purchases %}
         <div class="courses-grid">
-            {% for purchase in purchases %}
-            <div class="course-card" onclick="window.location.href='{% url 'course_detail' purchase.course.slug %}'">
-                {% if purchase.course.thumbnail %}
-                <img src="{{ purchase.course.thumbnail.url }}" alt="{{ purchase.course.title }}" class="course-image">
-                {% else %}
-                <div class="course-image" style="background: linear-gradient(135deg, 
-                    {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
-                    {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
+            {% for item in purchases %}
+            <div class="course-card">
+                <!-- Show completed badge if course is completed -->
+                {% if item.progress and item.progress.is_completed %}
+                <div class="completed-badge">
+                    ✓ Completed
+                </div>
                 {% endif %}
+
+                <div onclick="window.location.href='{% url 'course_detail' item.course.slug %}'" style="cursor: pointer;">
+                    {% if item.course.thumbnail %}
+                    <img src="{{ item.course.thumbnail.url }}" alt="{{ item.course.title }}" class="course-image">
+                    {% else %}
+                    <div class="course-image" style="background: linear-gradient(135deg, 
+                        {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
+                        {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
+                    {% endif %}
+                </div>
+
                 <div class="course-content">
-                    <span class="course-badge">Best Courses</span>
-                    <h3 class="course-title">{{ purchase.course.title }}</h3>
+                    <span class="course-badge">
+                        {% if item.purchase %}Purchased{% else %}Enrolled{% endif %}
+                    </span>
+                    <h3 class="course-title">{{ item.course.title }}</h3>
                     <p class="course-description">
-                        {{ purchase.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
+                        {{ item.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
                     </p>
+
+                    <!-- Progress Section -->
+                    {% if item.progress %}
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: {{ item.progress.progress_percentage|default:0 }}%"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span>{{ item.progress.progress_percentage|default:0|floatformat:0 }}% Complete</span>
+                            {% if item.progress.quiz_passed %}
+                            <span class="quiz-status quiz-passed">✓ Quiz Passed</span>
+                            {% elif item.progress.progress_percentage == 100 %}
+                            <span class="quiz-status quiz-pending">⚠ Quiz Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <div class="course-footer">
-                        {% if purchase.first_video %}
-                            <a href="{% url 'video_player' purchase.first_video.id %}" class="course-button" onclick="event.stopPropagation()">
-                                Start Learning
+                        <!-- Continue/Start Learning Button -->
+                        {% if item.first_video %}
+                            <a href="{% url 'video_player' item.course.id %}" class="course-button">
+                                {% if item.progress and item.progress.progress_percentage > 0 %}
+                                    Continue Learning
+                                {% else %}
+                                    Start Learning
+                                {% endif %}
                             </a>
                         {% else %}
-                            <a href="{% url 'course_detail' purchase.course.slug %}" class="course-button" onclick="event.stopPropagation()">
+                            <a href="{% url 'course_detail' item.course.slug %}" class="course-button">
                                 View Course
                             </a>
                         {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
 
-            {% for enrollment in enrollments %}
-            <div class="course-card" onclick="window.location.href='{% url 'course_detail' enrollment.course.slug %}'">
-                {% if enrollment.course.thumbnail %}
-                <img src="{{ enrollment.course.thumbnail.url }}" alt="{{ enrollment.course.title }}" class="course-image">
-                {% else %}
-                <div class="course-image" style="background: linear-gradient(135deg, 
-                    {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
-                    {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
-                {% endif %}
-                <div class="course-content">
-                    <span class="course-badge">Best Courses</span>
-                    <h3 class="course-title">{{ enrollment.course.title }}</h3>
-                    <p class="course-description">
-                        {{ enrollment.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
-                    </p>
-                    <div class="course-footer">
-                        {% if enrollment.first_video %}
-                            <a href="{% url 'video_player' enrollment.first_video.id %}" class="course-button" onclick="event.stopPropagation()">
-                                Start Learning
+                        <!-- Quiz Button (show if course has quiz) -->
+                        {% if item.has_quiz %}
+                            <a href="{% url 'take_quiz' item.course.id %}" class="course-button btn-quiz">
+                                {% if item.progress and item.progress.quiz_passed %}
+                                    ✓ Retake Quiz
+                                {% else %}
+                                    📝 Take Quiz
+                                {% endif %}
                             </a>
-                        {% else %}
-                            <a href="{% url 'course_detail' enrollment.course.slug %}" class="course-button" onclick="event.stopPropagation()">
-                                View Course
+                        {% endif %}
+
+                        <!-- Certificate Button (show only if completed) -->
+                        {% if item.certificate %}
+                            <a href="{% url 'certificate_detail' item.certificate.certificate_id %}" class="course-button btn-certificate">
+                                🏆 Certificate
                             </a>
                         {% endif %}
                     </div>
@@ -265,21 +394,16 @@
                 <i class="fas fa-book-open"></i>
             </div>
             <h3>No Courses Yet</h3>
-            <p>You haven't purchased any courses yet. Start exploring our course catalog!</p>
-            <a href="{% url 'all_courses' %}" class="btn">Browse Courses</a>
+            <p>You haven't enrolled in any courses yet. Start exploring our course catalog!</p>
+            <a href="{% url 'courses' %}" class="btn">Browse Courses</a>
         </div>
         {% endif %}
     </div>
 
-    <!-- Achievements Tab Content (Hidden by default) -->
+    <!-- Achievements Tab Content -->
     <div id="achievements-content" class="tab-content" style="display: none;">
-        <div class="empty-state">
-            <div class="empty-state-icon">
-                <i class="fas fa-trophy"></i>
-            </div>
-            <h3>Achievements Coming Soon</h3>
-            <p>Complete courses to unlock achievements and track your learning progress!</p>
-        </div>
+        <!-- This will be loaded from the achievements view -->
+        <iframe src="{% url 'my_achievements' %}" style="width: 100%; min-height: 800px; border: none;"></iframe>
     </div>
 </div>
 
@@ -296,8 +420,8 @@ function switchTab(tabName) {
         document.getElementById('courses-content').style.display = 'block';
         document.getElementById('achievements-content').style.display = 'none';
     } else {
-        document.getElementById('courses-content').style.display = 'none';
-        document.getElementById('achievements-content').style.display = 'block';
+        // Redirect to achievements page for better experience
+        window.location.href = "{% url 'my_achievements' %}";
     }
 }
 </script>
