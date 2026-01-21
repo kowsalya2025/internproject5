@@ -18,3 +18,19 @@ services:
     autoDeploy: true
     healthCheckPath: /
     disk: 512
+
+envVars:
+  - key: DJANGO_DEBUG
+    value: "False"
+  - key: DJANGO_SECRET_KEY
+    value: "<your-secret-key>"
+  - key: ALLOWED_HOSTS
+    value: "my-django-blog.onrender.com"
+
+  # ADD THESE 👇
+  - key: DJANGO_SUPERUSER_USERNAME
+    value: "admin"
+  - key: DJANGO_SUPERUSER_EMAIL
+    value: "admin@myblog.com"
+  - key: DJANGO_SUPERUSER_PASSWORD
+    value: "StrongAdmin@123"
