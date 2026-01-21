@@ -176,7 +176,10 @@ STATIC_URL = '/static/'
 #     BASE_DIR / 'static',  # Add this if you have a static folder
 # ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+
 
 # Media files (User uploaded content)
 MEDIA_URL = '/media/'
