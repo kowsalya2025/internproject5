@@ -741,31 +741,55 @@ class UserVideoProgress(models.Model):
 
 
 
-# ============================
-# COURSE REVIEW
-# ============================
-class CourseReview(models.Model):
-    RATING_CHOICES = [
-        (1, '1 Star'),
-        (2, '2 Stars'),
-        (3, '3 Stars'),
-        (4, '4 Stars'),
-        (5, '5 Stars')
-    ]
+# models.py - Update your existing CourseReview model
 
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='reviews')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    rating = models.IntegerField(choices=RATING_CHOICES, default=5)
-    comment = models.TextField()
+from django.db import models
+from django.conf import settings
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+class CourseReview(models.Model):
+    """Student reviews for courses"""
+    course = models.ForeignKey(
+        'Course', 
+        on_delete=models.CASCADE, 
+        related_name='course_reviews'  # Changed from 'reviews' to avoid clash
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Fixed: Use settings.AUTH_USER_MODEL instead of User
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='given_reviews'
+    )
+    name = models.CharField(max_length=100)
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    review = models.TextField()
+    photo = models.ImageField(
+        upload_to='reviews/', 
+        null=True, 
+        blank=True,
+        help_text="Optional profile photo"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-    is_approved = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']
-        unique_together = ['user', 'course']
+        verbose_name = 'Course Review'
+        verbose_name_plural = 'Course Reviews'
 
     def __str__(self):
-        return f"{self.user.email} - {self.course.title} ({self.rating} stars)"
+        return f"{self.name} - {self.course.title} ({self.rating}★)"
+
+    @property
+    def get_photo_url(self):
+        """Return photo URL or default avatar"""
+        if self.photo:
+            return self.photo.url
+        # Return default avatar
+        return f"https://ui-avatars.com/api/?name={self.name.replace(' ', '+')}&background=10b981&color=fff"
 
 
 # ============================

@@ -623,6 +623,278 @@
     gap: 12px;
     margin-top: 20px;
 }
+
+/* review section */
+.reviews-section {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+}
+
+.reviews-section h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+}
+
+.slider-container {
+    position: relative;
+    max-width: 900px;
+    margin: auto;
+}
+
+.slider {
+    overflow: hidden;
+}
+
+.review-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.review-header img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.review-header h3 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.course {
+    color: #555;
+    margin: 5px 0;
+}
+
+.stars {
+    color: #ffb400;
+    font-size: 18px;
+}
+
+.review-text {
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #333;
+}
+
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #eee;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.nav-btn.left {
+    left: -20px;
+}
+
+.nav-btn.right {
+    right: -20px;
+}
+
+.dots {
+    margin-top: 15px;
+}
+
+.dot {
+    height: 10px;
+    width: 10px;
+    background: #ccc;
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+.dot.active {
+    background: #4CAF50;
+}
+
+.review-btn {
+    display: inline-block;
+    margin-top: 25px;
+    background: #4CAF50;
+    color: #fff;
+    padding: 12px 30px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+
+/* Review Modal Styles - ADD THIS */
+.review-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    border: solid 2px black;
+
+}
+
+.review-modal.active {
+    display: flex;
+    border: solid 2px black;
+}
+
+.review-modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.review-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.review-modal-header h2 {
+    font-size: 1.8rem;
+    color: #111827;
+    margin: 0;
+}
+
+.review-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #6b7280;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    transition: color 0.2s;
+}
+
+.review-close:hover {
+    color: #111827;
+}
+
+.review-form-group {
+    margin-bottom: 20px;
+}
+
+.review-form-group label {
+    display: block;
+    font-size: 0.95rem;
+    color: #374151;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.review-form-group input,
+.review-form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.review-form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.review-form-group input:focus,
+.review-form-group textarea:focus {
+    outline: none;
+    border-color: #10b981;
+}
+
+.star-rating-input {
+    display: flex;
+    gap: 5px;
+    font-size: 2rem;
+}
+
+.star-rating-input .star {
+    color: #d1d5db;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.star-rating-input .star.filled {
+    color: #fbbf24;
+}
+
+.star-rating-input .star:hover {
+    color: #fbbf24;
+}
+
+.review-submit-btn {
+    width: 100%;
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.review-submit-btn:hover {
+    background: #059669;
+}
+
+.review-submit-btn:disabled {
+    background: #d1d5db;
+    cursor: not-allowed;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border: 1px solid #10b981;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #ef4444;
+}
+
 </style>
 {% endblock %}
 
@@ -685,7 +957,7 @@
                     </svg>
                 </div>
                 <div class="feature-content">
-                    <h3>{{ course.total_learners }}+</h3>
+                    <h3>{{ course.total_learners }}</h3>
                     <p>Learners</p>
                 </div>
             </div>
@@ -729,8 +1001,9 @@
         
         <!-- Tabs -->
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('overview')">Course Overview</button>
-            <button class="tab" onclick="switchTab('reviews')">Reviews</button>
+            <button class="tab active" onclick="switchTab('overview', this)">Course Overview</button>
+<button class="tab" onclick="switchTab('reviews', this)">Reviews</button>
+
         </div>
         
         <!-- Course Overview Content -->
@@ -775,9 +1048,55 @@
         </div>
         
         <!-- Reviews Content -->
-        <div id="reviews-content" class="tab-content" style="display: none;">
-            <p>Reviews coming soon...</p>
+   <!-- Reviews Content -->
+<div id="reviews-content" class="tab-content" style="display:none;">
+    <section class="reviews-section">
+        <h2>Students Reviews:</h2>
+
+        <div class="slider-container">
+            <button class="nav-btn left" onclick="prevSlide()">&#8249;</button>
+
+            <div class="slider">
+                {% for review in reviews %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <img src="{{ review.get_photo_url }}" alt="{{ review.name }}">
+                        <div>
+                            <h3>{{ review.name }}</h3>
+                            <p class="course">{{ review.course }}</p>
+                            <div class="stars">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= review.rating %}
+                                        ★
+                                    {% else %}
+                                        ☆
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="review-text">
+                        “{{ review.review }}”
+                    </p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button class="nav-btn right" onclick="nextSlide()">&#8250;</button>
         </div>
+
+        <div class="dots">
+            {% for review in reviews %}
+                <span class="dot {% if forloop.first %}active{% endif %}"></span>
+            {% endfor %}
+        </div>
+
+        <a href="#" class="review-btn" onclick="openReviewModal(event)">Write a Review</a>
+    </section>
+</div>
+
+
     </div>
     
     <!-- Curriculum Section -->
@@ -837,21 +1156,7 @@
 {% endfor %}
 
 
-            </div>
-
-
-
-             {% if user.is_authenticated %}
-        {% if user_has_access %}
-            {% if course.quiz %}
-            <div style="margin: 2rem 0; text-align: center;">
-                <a href="{% url 'quiz_start' course.slug %}" class="btn btn-primary" style="background: #667eea; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; display: inline-block; font-weight: 600;">
-                    📝 Take Course Quiz
-                </a>
-            </div>
-            {% endif %}
-        {% endif %}
-    {% endif %}
+</div>
 
         </div>
         {% endfor %}
@@ -894,55 +1199,145 @@
         </form>
     </div>
 </div>
+
+
+
+<!-- Review Modal -->
+<div class="review-modal" id="reviewModal">
+    <div class="review-modal-content">
+        <div class="review-modal-header">
+            <h2>Write a Review</h2>
+            <button class="review-close" onclick="closeReviewModal()">&times;</button>
+        </div>
+
+        <div id="reviewAlert"></div>
+
+        <form id="reviewForm" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="course_id" value="{{ course.id }}">
+            <input type="hidden" name="action" value="submit_review">
+
+            <div class="review-form-group">
+                <label for="review_name">Your Name *</label>
+                <input type="text" 
+                       id="review_name" 
+                       name="name" 
+                       required
+                       value="{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}">
+            </div>
+
+            <div class="review-form-group">
+                <label>Rating *</label>
+                <div class="star-rating-input" id="starRatingInput">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+                <input type="hidden" id="rating" name="rating" required>
+            </div>
+
+            <div class="review-form-group">
+                <label for="review_text">Your Review *</label>
+                <textarea id="review_text" 
+                          name="review" 
+                          required
+                          placeholder="Share your experience with this course..."></textarea>
+            </div>
+
+            <button type="submit" class="review-submit-btn">Submit Review</button>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function switchTab(tab) {
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    // Update content
+/* ============================
+   TAB SWITCHING
+============================ */
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const overview = document.getElementById('overview-content');
+    const reviews = document.getElementById('reviews-content');
+
     if (tab === 'overview') {
-        document.getElementById('overview-content').style.display = 'block';
-        document.getElementById('reviews-content').style.display = 'none';
+        overview.style.display = 'block';
+        reviews.style.display = 'none';
     } else {
-        document.getElementById('overview-content').style.display = 'none';
-        document.getElementById('reviews-content').style.display = 'block';
+        overview.style.display = 'none';
+        reviews.style.display = 'block';
+        showSlide(currentSlideIndex);
     }
 }
 
+/* ============================
+   REVIEW SLIDER
+============================ */
+let currentSlideIndex = 0;
+
+function getSlides() {
+    return document.querySelectorAll('#reviews-content .review-card');
+}
+
+function getDots() {
+    return document.querySelectorAll('#reviews-content .dot');
+}
+
+function showSlide(index) {
+    const slides = getSlides();
+    const dots = getDots();
+
+    if (!slides.length) return;
+
+    if (index >= slides.length) currentSlideIndex = 0;
+    if (index < 0) currentSlideIndex = slides.length - 1;
+
+    slides.forEach((slide, i) => {
+        slide.style.display = i === currentSlideIndex ? 'block' : 'none';
+    });
+
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSlideIndex);
+    });
+}
+
+function nextSlide() {
+    currentSlideIndex++;
+    showSlide(currentSlideIndex);
+}
+
+function prevSlide() {
+    currentSlideIndex--;
+    showSlide(currentSlideIndex);
+}
+
+/* ============================
+   CURRICULUM TOGGLE
+============================ */
 function toggleDay(dayNumber) {
     const content = document.getElementById(`day-${dayNumber}-content`);
-    const header = event.currentTarget;
+    if (!content) return;
+
+    const header = content.previousElementSibling;
     const toggle = header.querySelector('.day-toggle');
-    
-    if (content.classList.contains('active')) {
-        content.classList.remove('active');
-        toggle.textContent = '▼';
-    } else {
-        content.classList.add('active');
-        toggle.textContent = '▲';
-    }
+
+    content.classList.toggle('active');
+    toggle.textContent = content.classList.contains('active') ? '▲' : '▼';
 }
 
-// Open Day 01 by default
-document.addEventListener('DOMContentLoaded', function() {
-    const day1Content = document.getElementById('day-1-content');
-    if (day1Content) {
-        day1Content.classList.add('active');
-        const day1Header = day1Content.previousElementSibling;
-        const toggle = day1Header.querySelector('.day-toggle');
-        if (toggle) toggle.textContent = '▲';
-    }
-});
-
+/* ============================
+   PURCHASE MODAL
+============================ */
 function openPurchaseModal() {
     {% if user.is_authenticated %}
-    document.getElementById('purchaseModal').classList.add('active');
+        document.getElementById('purchaseModal').classList.add('active');
     {% else %}
-    window.location.href = '/login/?next={{ request.path }}';
+        window.location.href = '/login/?next={{ request.path }}';
     {% endif %}
 }
 
@@ -950,34 +1345,158 @@ function closePurchaseModal() {
     document.getElementById('purchaseModal').classList.remove('active');
 }
 
-// Close modal when clicking outside
-document.getElementById('purchaseModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closePurchaseModal();
-    }
-});
+/* ============================
+   REVIEW MODAL - ADD THIS SECTION
+============================ */
+function openReviewModal(event) {
+    event.preventDefault();
+    {% if user.is_authenticated %}
+        document.getElementById('reviewModal').classList.add('active');
+    {% else %}
+        if (confirm('You need to login to write a review. Redirect to login page?')) {
+            window.location.href = '/login/?next={{ request.path }}';
+        }
+    {% endif %}
+}
 
+function closeReviewModal() {
+    document.getElementById('reviewModal').classList.remove('active');
+    document.getElementById('reviewForm').reset();
+    document.querySelectorAll('.star-rating-input .star').forEach(star => {
+        star.classList.remove('filled');
+    });
+    document.getElementById('rating').value = '';
+    document.getElementById('reviewAlert').innerHTML = '';
+}
+
+/* ============================
+   VIDEO
+============================ */
 function playVideo(videoId) {
     window.location.href = `/video/${videoId}/`;
 }
 
-function markVideoComplete(videoId, checked) {
-    if (!checked) return; // Only mark as complete, not incomplete
+/* ============================
+   PAGE INIT
+============================ */
+document.addEventListener('DOMContentLoaded', function () {
+    // Tabs default
+    document.getElementById('overview-content').style.display = 'block';
+    document.getElementById('reviews-content').style.display = 'none';
+
+    // Review slider init
+    showSlide(currentSlideIndex);
+
+    // Open Day 01 by default
+    const day1 = document.getElementById('day-1-content');
+    if (day1) {
+        day1.classList.add('active');
+        const toggle = day1.previousElementSibling.querySelector('.day-toggle');
+        if (toggle) toggle.textContent = '▲';
+    }
+
+    // Star rating functionality
+    const stars = document.querySelectorAll('.star-rating-input .star');
+    const ratingInput = document.getElementById('rating');
+
+    stars.forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.getAttribute('data-rating');
+            ratingInput.value = rating;
+            
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-rating')) <= parseInt(rating)) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+        });
+
+        star.addEventListener('mouseenter', function() {
+            const rating = this.getAttribute('data-rating');
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-rating')) <= parseInt(rating)) {
+                    s.classList.add('filled');
+                } else {
+                    s.classList.remove('filled');
+                }
+            });
+        });
+    });
+
+    document.querySelector('.star-rating-input')?.addEventListener('mouseleave', function() {
+        const currentRating = ratingInput.value;
+        stars.forEach(s => {
+            if (currentRating && parseInt(s.getAttribute('data-rating')) <= parseInt(currentRating)) {
+                s.classList.add('filled');
+            } else {
+                s.classList.remove('filled');
+            }
+        });
+    });
+
+    // Review form submission
+    document.getElementById('reviewForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('.review-submit-btn');
+        const alertDiv = document.getElementById('reviewAlert');
+        
+        // Validate rating
+        if (!document.getElementById('rating').value) {
+            alertDiv.innerHTML = '<div class="alert alert-error">Please select a rating</div>';
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+        
+        const formData = new FormData(this);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alertDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+                setTimeout(() => {
+                    closeReviewModal();
+                    location.reload();
+                }, 2000);
+            } else {
+                alertDiv.innerHTML = '<div class="alert alert-error">' + (data.error || 'Error submitting review') + '</div>';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alertDiv.innerHTML = '<div class="alert alert-error">Network error. Please try again.</div>';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Review';
+        });
+    });
+});
+
+// Close modals on outside click
+document.addEventListener('click', function(e) {
+    const purchaseModal = document.getElementById('purchaseModal');
+    const reviewModal = document.getElementById('reviewModal');
     
-    fetch(`/video/${videoId}/complete/`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Video marked as complete');
-        }
-    })
-    .catch(error => console.error('Error:', error));
-}
+    if (purchaseModal && e.target === purchaseModal) {
+        closePurchaseModal();
+    }
+    if (reviewModal && e.target === reviewModal) {
+        closeReviewModal();
+    }
+});
 </script>
+
+
 {% endblock %}

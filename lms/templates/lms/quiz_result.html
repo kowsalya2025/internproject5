@@ -277,18 +277,18 @@
 
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-value">{{ results|length }}</div>
+                <div class="stat-value">{{ total_questions }}</div>
                 <div class="stat-label">Total Questions</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" style="color: #22c55e;">
-                    {{ results|selectattr:"is_correct"|list|length }}
+                    {{ correct_count }}
                 </div>
                 <div class="stat-label">Correct Answers</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" style="color: #ef4444;">
-                    {{ results|rejectattr:"is_correct"|list|length }}
+                    {{ incorrect_count }}
                 </div>
                 <div class="stat-label">Wrong Answers</div>
             </div>

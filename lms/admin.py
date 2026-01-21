@@ -560,26 +560,15 @@ class PurchaseAdmin(admin.ModelAdmin):
 # ============================
 # COURSE REVIEW ADMIN
 # ============================
+from django.contrib import admin
+from .models import CourseReview
+
 @admin.register(CourseReview)
 class CourseReviewAdmin(admin.ModelAdmin):
-    list_display = ['course', 'user', 'rating_stars', 'truncated_comment', 'created_at', 'is_approved']
-    list_editable = ['is_approved']
-    list_filter = ['rating', 'is_approved', 'created_at', 'course']
-    search_fields = ['comment', 'user__email', 'user__username', 'course__title']
-    readonly_fields = ['course', 'user', 'rating', 'comment', 'created_at']
-    list_select_related = ['course', 'user']
-    
-    def rating_stars(self, obj):
-        stars = '★' * obj.rating + '☆' * (5 - obj.rating)
-        return format_html('<span style="color: #ffc107; font-size: 14px;">{}</span>', stars)
-    rating_stars.short_description = 'Rating'
-    
-    def truncated_comment(self, obj):
-        return Truncator(obj.comment).chars(50)
-    truncated_comment.short_description = 'Comment'
-    
-    def has_add_permission(self, request):
-        return False
+    list_display = ['name', 'course', 'rating', 'created_at']
+    list_filter = ['rating', 'created_at', 'course']
+    search_fields = ['name', 'review']
+    readonly_fields = ['created_at', 'updated_at']
 
 
 # ============================
@@ -887,3 +876,5 @@ class CertificateAdmin(admin.ModelAdmin):
     list_filter = ['issue_date']
     search_fields = ['user__email', 'course__title', 'certificate_id']
     readonly_fields = ['certificate_id', 'issue_date', 'quiz_score']
+
+

@@ -218,9 +218,20 @@ def courses_by_category(request, category_slug):
     }
     return render(request, 'courses/category.html', context)
 
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.db.models import Prefetch
+from django.conf import settings
+from .models import (
+    Course, CurriculumDay, Purchase, UserVideoProgress, 
+    CourseReview  # Use your existing CourseReview model
+)
 
+@require_http_methods(["GET", "POST"])
 def course_detail(request, slug):
-    """Display course detail page with curriculum"""
+    """Display course detail page with curriculum and handle review submissions"""
+    
     course = get_object_or_404(
         Course.objects.prefetch_related(
             'instructors',
@@ -232,6 +243,83 @@ def course_detail(request, slug):
         slug=slug,
         is_active=True
     )
+
+    # Handle AJAX POST requests (Review Submission)
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+        
+        if action == 'submit_review':
+            try:
+                # Validate required fields
+                name = request.POST.get('name', '').strip()
+                rating = request.POST.get('rating')
+                review_text = request.POST.get('review', '').strip()
+                
+                if not name:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Name is required'
+                    })
+                
+                if not rating:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Please select a rating'
+                    })
+                
+                if not review_text:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Review text is required'
+                    })
+                
+                # Validate rating value
+                try:
+                    rating_value = int(rating)
+                    if rating_value < 1 or rating_value > 5:
+                        return JsonResponse({
+                            'success': False, 
+                            'error': 'Rating must be between 1 and 5'
+                        })
+                except ValueError:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'Invalid rating value'
+                    })
+                
+                # Check if user already reviewed this course (optional)
+                if request.user.is_authenticated:
+                    existing_review = CourseReview.objects.filter(
+                        user=request.user,
+                        course=course
+                    ).first()
+                    
+                    if existing_review:
+                        return JsonResponse({
+                            'success': False, 
+                            'error': 'You have already reviewed this course'
+                        })
+                
+                # Create review
+                review = CourseReview.objects.create(
+                    course=course,
+                    name=name,
+                    rating=rating_value,
+                    review=review_text,
+                    user=request.user if request.user.is_authenticated else None,
+                    # Set to True if you don't need moderation, False if you do
+                )
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'Thank you! Your review has been submitted successfully.'
+                })
+                
+            except Exception as e:
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'An error occurred: {str(e)}'
+                })
 
     # Check if user has purchased the course
     user_has_paid = False
@@ -259,6 +347,7 @@ def course_detail(request, slug):
             'day_number': day.day_number,
             'title': day.title,
             'description': day.description,
+            'is_free': day.is_free if hasattr(day, 'is_free') else False,
             'videos': []
         }
 
@@ -282,10 +371,16 @@ def course_detail(request, slug):
                 'description': video.description,
                 'duration': video.duration,
                 'is_accessible': is_accessible,
-                'is_completed': is_completed
+                'is_completed': is_completed,
+                'video_url': video.video_file.url if hasattr(video, 'video_file') and video.video_file else ''
             })
 
         curriculum_days.append(day_data)
+
+    # Get reviews - adjust based on your CourseReview model fields
+    reviews = CourseReview.objects.filter(
+        course=course
+    ).select_related('user').order_by('-created_at')[:10]
 
     context = {
         'course': course,
@@ -295,9 +390,11 @@ def course_detail(request, slug):
         'discount_percentage': course.get_discount_percentage(),
         'skills_list': course.get_skills_list(),
         'tools_list': course.get_tools_list(),
+        'reviews': reviews,
     }
 
     return render(request, 'courses/detail.html', context)
+
 
 
 
@@ -525,212 +622,6 @@ def my_courses(request):
     return render(request, 'lms/my_courses.html', context)
 
 
-def video_player(request, video_id):
-    """Enhanced video player view with curriculum and navigation"""
-
-    video = get_object_or_404(
-        Video.objects.select_related('curriculum_day__course'),
-        id=video_id
-    )
-
-    # Access control
-    if not video.is_accessible_by(request.user):
-        if not request.user.is_authenticated:
-            messages.error(request, 'Please login to access this video.')
-            return HttpResponseRedirect(f"{reverse('login')}?next={request.path}")
-        messages.error(request, 'You need to purchase the course to access this video.')
-        return redirect('course_detail', slug=video.curriculum_day.course.slug)
-
-    course = video.curriculum_day.course
-
-    # -------------------------------
-    # Video-level progress
-    # -------------------------------
-    progress = None
-    if request.user.is_authenticated:
-        progress, _ = UserVideoProgress.objects.get_or_create(
-            user=request.user,
-            video=video,
-            defaults={
-                'is_completed': False,
-                'watched_percentage': 0,
-                'watched_duration': 0
-            }
-        )
-
-    is_completed = progress.is_completed if progress else False
-    progress_percentage = progress.progress_percentage if progress else 0
-    watched_percentage = progress_percentage
-    watched_duration = progress.watched_duration if progress else 0
-
-    # -------------------------------
-    # Curriculum + video listing
-    # -------------------------------
-    curriculum_days = []
-    all_videos_list = []
-    completed_days = 0
-
-    curriculum_days_qs = CurriculumDay.objects.filter(
-        course=course
-    ).prefetch_related('videos').order_by('order', 'day_number')
-
-    for day in curriculum_days_qs:
-        day_videos = []
-        day_completed_count = 0
-
-        for vid in day.videos.all().order_by('order', 'id'):
-            vid_progress = None
-            if request.user.is_authenticated:
-                vid_progress = UserVideoProgress.objects.filter(
-                    user=request.user,
-                    video=vid
-                ).first()
-
-            vid_is_completed = vid_progress.is_completed if vid_progress else False
-            vid_progress_percentage = vid_progress.progress_percentage if vid_progress else 0
-            vid_watched_duration = vid_progress.watched_duration if vid_progress else 0
-
-            if vid_is_completed:
-                day_completed_count += 1
-
-            day_videos.append({
-                'id': vid.id,
-                'title': vid.title,
-                'duration': vid.duration or 0,
-                'is_accessible': vid.is_accessible_by(request.user),
-                'is_completed': vid_is_completed,
-                'progress_percentage': vid_progress_percentage,
-                'watched_percentage': vid_progress_percentage,
-                'watched_duration': vid_watched_duration,
-                'order': vid.order or 0
-            })
-
-            all_videos_list.append(vid)
-
-        total_videos_in_day = len(day_videos)
-        day_progress_percentage = int(
-            (day_completed_count / total_videos_in_day) * 100
-        ) if total_videos_in_day else 0
-
-        if day_progress_percentage == 100:
-            completed_days += 1
-
-        curriculum_days.append({
-            'id': day.id,
-            'title': day.title,
-            'videos': day_videos,
-            'completed_videos': day_completed_count,
-            'total_videos': total_videos_in_day,
-            'progress_percentage': day_progress_percentage
-        })
-
-    # -------------------------------
-    # Previous / Next video
-    # -------------------------------
-    previous_video = next_video = None
-    try:
-        idx = all_videos_list.index(video)
-        if idx > 0 and all_videos_list[idx - 1].is_accessible_by(request.user):
-            previous_video = all_videos_list[idx - 1]
-        if idx < len(all_videos_list) - 1 and all_videos_list[idx + 1].is_accessible_by(request.user):
-            next_video = all_videos_list[idx + 1]
-    except ValueError:
-        pass
-
-    # -------------------------------
-    # Course progress
-    # -------------------------------
-    total_videos = len(all_videos_list)
-    completed_videos = 0
-    course_progress = 0
-
-    if request.user.is_authenticated:
-        completed_videos = UserVideoProgress.objects.filter(
-            user=request.user,
-            video__in=all_videos_list,
-            is_completed=True
-        ).count()
-        course_progress = int((completed_videos / total_videos) * 100) if total_videos else 0
-
-    # -------------------------------
-    # Course-level quiz status & certificate
-    # -------------------------------
-    quiz_passed = False
-    has_quiz = False
-    course_completed = False
-    certificate = None
-    
-    if request.user.is_authenticated:
-        # Get or create course progress (for quiz tracking)
-        course_progress_obj, _ = CourseProgress.objects.get_or_create(
-            user=request.user,
-            course=course
-        )
-        
-        # Update course progress with completed videos
-        # Sync UserVideoProgress with CourseProgress
-        completed_video_objects = [v for v in all_videos_list if UserVideoProgress.objects.filter(
-            user=request.user,
-            video=v,
-            is_completed=True
-        ).exists()]
-        
-        course_progress_obj.completed_videos.set(completed_video_objects)
-        course_progress_obj.update_progress()
-        
-        # Check quiz status
-        quiz_passed = course_progress_obj.quiz_passed
-        
-        # Check if course has a quiz
-        try:
-            has_quiz = hasattr(course, 'quiz') and course.quiz is not None
-        except:
-            has_quiz = False
-        
-        # Check if course is completed (all videos + quiz passed)
-        course_completed = course_progress_obj.is_completed
-        
-        # Get certificate if exists
-        if course_completed:
-            try:
-                certificate = Certificate.objects.get(
-                    user=request.user,
-                    course=course
-                )
-            except Certificate.DoesNotExist:
-                certificate = None
-
-    # -------------------------------
-    # Context
-    # -------------------------------
-    context = {
-        'video': video,
-        'course': course,
-        'progress': progress,
-        'curriculum_days': curriculum_days,
-        'current_day': video.curriculum_day,
-        'previous_video': previous_video,
-        'next_video': next_video,
-
-        'course_progress': course_progress,
-        'total_videos': total_videos,
-        'completed_videos': completed_videos,
-        'completed_days': completed_days,
-
-        'is_completed': is_completed,
-        'progress_percentage': progress_percentage,
-        'watched_percentage': watched_percentage,
-        'watched_duration': watched_duration,
-
-        # Quiz & Certificate
-        'quiz_passed': quiz_passed,
-        'has_quiz': has_quiz,
-        'course_completed': course_completed,
-        'certificate': certificate,
-    }
-
-    return render(request, 'courses/video_player.html', context)
-
 # def video_player(request, video_id):
 #     """Enhanced video player view with curriculum and navigation"""
 
@@ -859,15 +750,52 @@ def video_player(request, video_id):
 #         course_progress = int((completed_videos / total_videos) * 100) if total_videos else 0
 
 #     # -------------------------------
-#     # Course-level quiz status
+#     # Course-level quiz status & certificate
 #     # -------------------------------
 #     quiz_passed = False
+#     has_quiz = False
+#     course_completed = False
+#     certificate = None
+    
 #     if request.user.is_authenticated:
+#         # Get or create course progress (for quiz tracking)
 #         course_progress_obj, _ = CourseProgress.objects.get_or_create(
 #             user=request.user,
 #             course=course
 #         )
+        
+#         # Update course progress with completed videos
+#         # Sync UserVideoProgress with CourseProgress
+#         completed_video_objects = [v for v in all_videos_list if UserVideoProgress.objects.filter(
+#             user=request.user,
+#             video=v,
+#             is_completed=True
+#         ).exists()]
+        
+#         course_progress_obj.completed_videos.set(completed_video_objects)
+#         course_progress_obj.update_progress()
+        
+#         # Check quiz status
 #         quiz_passed = course_progress_obj.quiz_passed
+        
+#         # Check if course has a quiz
+#         try:
+#             has_quiz = hasattr(course, 'quiz') and course.quiz is not None
+#         except:
+#             has_quiz = False
+        
+#         # Check if course is completed (all videos + quiz passed)
+#         course_completed = course_progress_obj.is_completed
+        
+#         # Get certificate if exists
+#         if course_completed:
+#             try:
+#                 certificate = Certificate.objects.get(
+#                     user=request.user,
+#                     course=course
+#                 )
+#             except Certificate.DoesNotExist:
+#                 certificate = None
 
 #     # -------------------------------
 #     # Context
@@ -891,13 +819,251 @@ def video_player(request, video_id):
 #         'watched_percentage': watched_percentage,
 #         'watched_duration': watched_duration,
 
+#         # Quiz & Certificate
 #         'quiz_passed': quiz_passed,
+#         'has_quiz': has_quiz,
+#         'course_completed': course_completed,
+#         'certificate': certificate,
 #     }
 
 #     return render(request, 'courses/video_player.html', context)
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+from django.http import HttpResponseRedirect
+from django.contrib import messages
+
+from lms.models import (
+    Video,
+    CurriculumDay,
+    UserVideoProgress,
+    CourseProgress,
+    Certificate,
+)
 
 
+def video_player(request, video_id):
+    """
+    Video player view (READ-ONLY for course & quiz state)
+    Safe for GET requests – no quiz validation or writes.
+    """
 
+    # -------------------------------------------------
+    # Video + course
+    # -------------------------------------------------
+    video = get_object_or_404(
+        Video.objects.select_related("curriculum_day__course"),
+        id=video_id,
+    )
+
+    course = video.curriculum_day.course
+
+    # -------------------------------------------------
+    # Access control
+    # -------------------------------------------------
+    if not video.is_accessible_by(request.user):
+        if not request.user.is_authenticated:
+            messages.error(request, "Please login to access this video.")
+            return HttpResponseRedirect(
+                f"{reverse('login')}?next={request.path}"
+            )
+
+        messages.error(
+            request,
+            "You need to purchase the course to access this video.",
+        )
+        return redirect("course_detail", slug=course.slug)
+
+    # -------------------------------------------------
+    # Current video progress
+    # -------------------------------------------------
+    progress = None
+    is_completed = False
+    progress_percentage = 0
+    watched_percentage = 0
+    watched_duration = 0
+
+    if request.user.is_authenticated:
+        progress, _ = UserVideoProgress.objects.get_or_create(
+            user=request.user,
+            video=video,
+            defaults={
+                "is_completed": False,
+                "watched_percentage": 0,
+                "watched_duration": 0,
+            },
+        )
+
+        is_completed = progress.is_completed
+        progress_percentage = progress.progress_percentage
+        watched_percentage = progress.progress_percentage
+        watched_duration = progress.watched_duration
+
+    # -------------------------------------------------
+    # Curriculum + video listing
+    # -------------------------------------------------
+    curriculum_days = []
+    all_videos_list = []
+    completed_days = 0
+
+    curriculum_days_qs = (
+        CurriculumDay.objects.filter(course=course)
+        .prefetch_related("videos")
+        .order_by("order", "day_number")
+    )
+
+    for day in curriculum_days_qs:
+        day_videos = []
+        completed_count = 0
+
+        for vid in day.videos.all().order_by("order", "id"):
+            vid_progress = None
+
+            if request.user.is_authenticated:
+                vid_progress = UserVideoProgress.objects.filter(
+                    user=request.user,
+                    video=vid,
+                ).first()
+
+            vid_completed = vid_progress.is_completed if vid_progress else False
+            vid_percentage = (
+                vid_progress.progress_percentage if vid_progress else 0
+            )
+            vid_duration = (
+                vid_progress.watched_duration if vid_progress else 0
+            )
+
+            if vid_completed:
+                completed_count += 1
+
+            day_videos.append(
+                {
+                    "id": vid.id,
+                    "title": vid.title,
+                    "duration": vid.duration or 0,
+                    "is_accessible": vid.is_accessible_by(request.user),
+                    "is_completed": vid_completed,
+                    "progress_percentage": vid_percentage,
+                    "watched_percentage": vid_percentage,
+                    "watched_duration": vid_duration,
+                    "order": vid.order or 0,
+                }
+            )
+
+            all_videos_list.append(vid)
+
+        total_videos_in_day = len(day_videos)
+        day_progress_percentage = (
+            int((completed_count / total_videos_in_day) * 100)
+            if total_videos_in_day
+            else 0
+        )
+
+        if day_progress_percentage == 100:
+            completed_days += 1
+
+        curriculum_days.append(
+            {
+                "id": day.id,
+                "title": day.title,
+                "videos": day_videos,
+                "completed_videos": completed_count,
+                "total_videos": total_videos_in_day,
+                "progress_percentage": day_progress_percentage,
+            }
+        )
+
+    # -------------------------------------------------
+    # Previous / Next video
+    # -------------------------------------------------
+    previous_video = None
+    next_video = None
+
+    try:
+        idx = all_videos_list.index(video)
+
+        if idx > 0:
+            prev = all_videos_list[idx - 1]
+            if prev.is_accessible_by(request.user):
+                previous_video = prev
+
+        if idx < len(all_videos_list) - 1:
+            nxt = all_videos_list[idx + 1]
+            if nxt.is_accessible_by(request.user):
+                next_video = nxt
+
+    except ValueError:
+        pass
+
+    # -------------------------------------------------
+    # Course progress (READ ONLY)
+    # -------------------------------------------------
+    total_videos = len(all_videos_list)
+    completed_videos = 0
+    course_progress = 0
+
+    if request.user.is_authenticated:
+        completed_videos = UserVideoProgress.objects.filter(
+            user=request.user,
+            video__in=all_videos_list,
+            is_completed=True,
+        ).count()
+
+        course_progress = (
+            int((completed_videos / total_videos) * 100)
+            if total_videos
+            else 0
+        )
+
+    # -------------------------------------------------
+    # Quiz & certificate status (NO VALIDATION)
+    # -------------------------------------------------
+    quiz_passed = False
+    has_quiz = False
+    course_completed = False
+    certificate = None
+
+    if request.user.is_authenticated:
+        course_progress_obj, _ = CourseProgress.objects.get_or_create(
+            user=request.user,
+            course=course,
+        )
+
+        quiz_passed = course_progress_obj.quiz_passed
+        course_completed = course_progress_obj.is_completed
+        has_quiz = hasattr(course, "quiz") and course.quiz is not None
+
+        if course_completed:
+            certificate = Certificate.objects.filter(
+                user=request.user,
+                course=course,
+            ).first()
+
+    # -------------------------------------------------
+    # Context
+    # -------------------------------------------------
+    context = {
+        "video": video,
+        "course": course,
+        "progress": progress,
+        "curriculum_days": curriculum_days,
+        "current_day": video.curriculum_day,
+        "previous_video": previous_video,
+        "next_video": next_video,
+        "course_progress": course_progress,
+        "total_videos": total_videos,
+        "completed_videos": completed_videos,
+        "completed_days": completed_days,
+        "is_completed": is_completed,
+        "progress_percentage": progress_percentage,
+        "watched_percentage": watched_percentage,
+        "watched_duration": watched_duration,
+        "quiz_passed": quiz_passed,
+        "has_quiz": has_quiz,
+        "course_completed": course_completed,
+        "certificate": certificate,
+    }
+
+    return render(request, "courses/video_player.html", context)
 
 
 
@@ -1429,51 +1595,51 @@ def quiz_take(request, course_slug):
     return render(request, 'lms/quiz_take.html', context)
 
 
-@login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.utils import timezone
+from django.contrib import messages
+
 def quiz_submit(request, attempt_id):
-    """Submit quiz answers"""
     attempt = get_object_or_404(QuizAttempt, id=attempt_id, user=request.user)
-    
+
+    if request.method != "POST":
+        return redirect("quiz_take", attempt.quiz.id)
+
+    # Prevent resubmission
     if attempt.completed_at:
-        messages.error(request, "This quiz has already been submitted.")
-        return redirect('quiz_result', attempt_id=attempt_id)
-    
-    if request.method == 'POST':
-        # Process answers
-        for question in attempt.quiz.questions.all():
-            question_key = f'question_{question.id}'
-            
-            if question.question_type == 'multiple':
-                # Multiple choice - can select multiple answers
-                answer_ids = request.POST.getlist(question_key)
-            else:
-                # Single choice or True/False - only one answer
-                answer_ids = [request.POST.get(question_key)] if request.POST.get(question_key) else []
-            
-            if answer_ids:
-                # Create response
-                response = QuizResponse.objects.create(
-                    attempt=attempt,
-                    question=question
-                )
-                
-                # Add selected answers
-                answers = Answer.objects.filter(id__in=answer_ids, question=question)
-                response.selected_answers.set(answers)
-        
-        # Mark attempt as completed
-        attempt.completed_at = timezone.now()
-        
-        # Calculate time taken
-        time_taken = (attempt.completed_at - attempt.started_at).total_seconds()
-        attempt.time_taken = int(time_taken)
-        
-        # Calculate score
-        attempt.calculate_score()
-        
-        return redirect('quiz_result', attempt_id=attempt.id)
-    
-    return redirect('quiz_take', course_slug=attempt.quiz.course.slug)
+        messages.error(request, "This quiz attempt is already submitted.")
+        return redirect("quiz_result", attempt.id)
+
+    for question in attempt.quiz.questions.all():
+        key = f"question_{question.id}"
+        selected_ids = request.POST.getlist(key)
+
+        if not selected_ids:
+            continue  # unanswered question
+
+        # Validate answers belong to this question
+        answers = Answer.objects.filter(
+            id__in=selected_ids,
+            question=question
+        )
+
+        if not answers.exists():
+            continue
+
+        response = QuizResponse.objects.create(
+            attempt=attempt,
+            question=question
+        )
+
+        response.selected_answers.set(answers)
+
+    # Mark attempt completed
+    attempt.completed_at = timezone.now()
+    attempt.calculate_score()
+
+    messages.success(request, "Quiz submitted successfully.")
+    return redirect("quiz_result", attempt.id)
+
 
 
 @login_required
@@ -1486,19 +1652,32 @@ def quiz_result(request, attempt_id):
         'selected_answers'
     ).all()
     
-    # Prepare detailed results
+    # Prepare detailed results and count correct/incorrect
     results = []
+    correct_count = 0
+    incorrect_count = 0
+    
     for response in responses:
         question = response.question
         correct_answers = question.answers.filter(is_correct=True)
         selected_answers = response.selected_answers.all()
+        is_correct = response.is_correct()
+        
+        # Count correct/incorrect answers
+        if is_correct:
+            correct_count += 1
+        else:
+            incorrect_count += 1
         
         results.append({
             'question': question,
             'selected_answers': selected_answers,
             'correct_answers': correct_answers,
-            'is_correct': response.is_correct(),
+            'is_correct': is_correct,
         })
+    
+    # Calculate total questions
+    total_questions = len(results)
     
     # Check if certificate was generated
     certificate = None
@@ -1520,10 +1699,13 @@ def quiz_result(request, attempt_id):
         'course': attempt.quiz.course,
         'results': results,
         'certificate': certificate,
+        # Add these for the stats
+        'total_questions': total_questions,
+        'correct_count': correct_count,
+        'incorrect_count': incorrect_count,
     }
     
     return render(request, 'lms/quiz_result.html', context)
-
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
