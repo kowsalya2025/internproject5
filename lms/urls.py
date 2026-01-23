@@ -53,6 +53,7 @@ urlpatterns = [
    
     path('payment/<int:purchase_id>/', views.payment_page, name='payment_page'),
     path('payment/<int:purchase_id>/complete/', views.complete_payment, name='complete_payment'),
+    path('payment/callback/', views.razorpay_callback, name='razorpay-callback'),
     
     # Video URLs
     path('video/<int:video_id>/', views.video_player, name='video_player'),
@@ -77,5 +78,6 @@ urlpatterns = [
     path('achievements/', views.my_achievements, name='my_achievements'),
     path('certificate/<str:certificate_id>/', views.certificate_detail, name='certificate_detail'),
     path('certificate/<str:certificate_id>/download/', views.download_certificate, name='download_certificate'),
+    
     
 ]

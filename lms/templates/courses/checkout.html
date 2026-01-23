@@ -746,7 +746,8 @@ document.getElementById('rzp-button').onclick = function(e){
 
             form.innerHTML = `
                 <input type="hidden" name="csrfmiddlewaretoken" value="${csrf}">
-                <input type="hidden" name="razorpay_order_id" value="{{ razorpay_order_id }}">
+                <input type="hidden" name="razorpay_order_id" value="${response.razorpay_order_id}">
+
                 <input type="hidden" name="razorpay_payment_id" value="${response.razorpay_payment_id}">
                 <input type="hidden" name="razorpay_signature" value="${response.razorpay_signature}">
                 <input type="hidden" name="course_slug" value="{{ course.slug }}">

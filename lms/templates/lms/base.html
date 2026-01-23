@@ -30,10 +30,12 @@
         .navbar {
             background: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 1.2rem 0;
+            padding: 1.2rem;
             position: sticky;
             top: 0;
             z-index: 1000;
+        
+        
         }
 
         .nav-container {
@@ -405,6 +407,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             margin-bottom: 1rem;
+           
         }
 
         .footer-links {
@@ -419,7 +422,8 @@
             color: #555;
             text-decoration: none;
             transition: color 0.3s ease;
-            font-size: 0.95rem;
+            font-size: 1.2rem;
+            
         }
 
         .footer-links a:hover {
@@ -541,24 +545,37 @@
         display: flex;
     }
 }
+.logo img {
+    cursor: pointer;
+}
+
+.logo a {
+    display: inline-block;
+}
+
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-left">
-                {% if user.is_authenticated %}
-                <button class="menu-toggle" onclick="toggleSidebar()">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
-                {% endif %}
-                <div class="logo">
-                    <img src="{% static 'images/logo.png' %}" alt="Logo">
-                </div>
-            </div>
+    <div class="nav-left">
+        {% if user.is_authenticated %}
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        {% endif %}
+
+        <div class="logo">
+            <a href="{% url 'home' %}">
+                <img src="{% static 'images/logo.png' %}" alt="Logo">
+            </a>
+        </div>
+    </div>
+</div>
+
             
             <div class="hamburger" onclick="toggleMenu()">
                 <span></span>

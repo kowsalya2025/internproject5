@@ -1,5 +1,3 @@
-
-
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -266,4 +264,3 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
-

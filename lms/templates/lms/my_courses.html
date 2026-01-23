@@ -284,6 +284,15 @@
     .contact-head h1 {
         margin: 0;
     }
+
+    /* Tab content styling */
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
 </style>
 {% endblock %}
 
@@ -296,13 +305,13 @@
 <div class="courses-section">
     <div class="section-header">
         <div class="section-tabs">
-            <div class="tab active" onclick="switchTab('courses')">My Courses</div>
-            <div class="tab" onclick="switchTab('achievements')">Achievements & Certificates</div>
+            <div class="tab active" onclick="switchTab('courses', this)">My Courses</div>
+            <div class="tab" onclick="switchTab('achievements', this)">Achievements & Certificates</div>
         </div>
     </div>
 
     <!-- Courses Tab Content -->
-    <div id="courses-content" class="tab-content">
+    <div id="courses-content" class="tab-content active">
         {% if purchases %}
         <div class="courses-grid">
             {% for item in purchases %}
@@ -319,8 +328,8 @@
                     <img src="{{ item.course.thumbnail.url }}" alt="{{ item.course.title }}" class="course-image">
                     {% else %}
                     <div class="course-image" style="background: linear-gradient(135deg, 
-                        {% cycle '#667eea' '#f093fb' '#4facfe' '#43e97b' '#fa709a' %}  0%, 
-                        {% cycle '#764ba2' '#f5576c' '#00f2fe' '#38f9d7' '#fee140' %} 100%);"></div>
+                        {% if forloop.counter0|divisibleby:5 %}#667eea{% elif forloop.counter0|divisibleby:4 %}#f093fb{% elif forloop.counter0|divisibleby:3 %}#4facfe{% elif forloop.counter0|divisibleby:2 %}#43e97b{% else %}#fa709a{% endif %} 0%, 
+                        {% if forloop.counter0|divisibleby:5 %}#764ba2{% elif forloop.counter0|divisibleby:4 %}#f5576c{% elif forloop.counter0|divisibleby:3 %}#00f2fe{% elif forloop.counter0|divisibleby:2 %}#38f9d7{% else %}#fee140{% endif %} 100%);"></div>
                     {% endif %}
                 </div>
 
@@ -330,7 +339,7 @@
                     </span>
                     <h3 class="course-title">{{ item.course.title }}</h3>
                     <p class="course-description">
-                        {{ item.course.short_description|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
+                        {{ item.course.short_description|default:item.course.description|truncatechars:150|default:"Master the essential skills and techniques in this comprehensive course designed for all skill levels." }}
                     </p>
 
                     <!-- Progress Section -->
@@ -350,40 +359,45 @@
                     </div>
                     {% endif %}
 
-                    <div class="course-footer">
-                        <!-- Continue/Start Learning Button -->
-                        {% if item.first_video %}
-                            <a href="{% url 'video_player' item.course.id %}" class="course-button">
-                                {% if item.progress and item.progress.progress_percentage > 0 %}
-                                    Continue Learning
-                                {% else %}
-                                    Start Learning
-                                {% endif %}
-                            </a>
-                        {% else %}
-                            <a href="{% url 'course_detail' item.course.slug %}" class="course-button">
-                                View Course
-                            </a>
-                        {% endif %}
-
-                        <!-- Quiz Button (show if course has quiz) -->
-                        {% if item.has_quiz %}
-                            <a href="{% url 'take_quiz' item.course.id %}" class="course-button btn-quiz">
-                                {% if item.progress and item.progress.quiz_passed %}
-                                    ✓ Retake Quiz
-                                {% else %}
-                                    📝 Take Quiz
-                                {% endif %}
-                            </a>
-                        {% endif %}
-
-                        <!-- Certificate Button (show only if completed) -->
-                        {% if item.certificate %}
-                            <a href="{% url 'certificate_detail' item.certificate.certificate_id %}" class="course-button btn-certificate">
-                                🏆 Certificate
-                            </a>
-                        {% endif %}
-                    </div>
+                    <!-- In your my_courses.html template -->
+<div class="course-footer">
+    <!-- Continue/Start Learning Button -->
+    {% if item.first_video %}
+        <a href="{% url 'video_player' item.first_video.id %}" class="course-button">
+            {% if item.progress and item.progress.progress_percentage > 0 %}
+                Continue Learning
+            {% else %}
+                Start Learning
+            {% endif %}
+        </a>
+    {% else %}
+        <a href="{% url 'course_detail' item.course.slug %}" class="course-button">
+            View Course
+        </a>
+    {% endif %}
+    
+    <!-- Quiz Button -->
+    {% if item.has_quiz %}
+        <a href="{% url 'take_quiz' item.course.slug %}" class="course-button btn-quiz">
+            {% if item.progress and item.progress.quiz_passed %}
+                ✓ Retake Quiz
+            {% else %}
+                📝 Take Quiz
+            {% endif %}
+        </a>
+    {% endif %}
+    
+    <!-- Certificate Button -->
+    {% if item.certificate %}
+        <a href="{% url 'certificate_detail' item.certificate.certificate_id %}" class="course-button btn-certificate">
+            🏆 Certificate
+        </a>
+    {% elif item.progress and item.progress.is_completed %}
+        <a href="#" class="course-button btn-certificate" onclick="alert('Certificate will be available soon!')">
+            🏆 Get Certificate
+        </a>
+    {% endif %}
+</div>
                 </div>
             </div>
             {% endfor %}
@@ -391,38 +405,63 @@
         {% else %}
         <div class="empty-state">
             <div class="empty-state-icon">
-                <i class="fas fa-book-open"></i>
+                📚
             </div>
             <h3>No Courses Yet</h3>
             <p>You haven't enrolled in any courses yet. Start exploring our course catalog!</p>
-            <a href="{% url 'courses' %}" class="btn">Browse Courses</a>
+            <a href="{% url 'all_courses' %}" class="btn">Browse Courses</a>
         </div>
         {% endif %}
     </div>
 
     <!-- Achievements Tab Content -->
-    <div id="achievements-content" class="tab-content" style="display: none;">
-        <!-- This will be loaded from the achievements view -->
-        <iframe src="{% url 'my_achievements' %}" style="width: 100%; min-height: 800px; border: none;"></iframe>
+    <div id="achievements-content" class="tab-content">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                🏆
+            </div>
+            <h3>Achievements & Certificates</h3>
+            <p>Complete courses to earn certificates and achievements!</p>
+            <a href="{% url 'all_courses' %}" class="btn">Start Learning</a>
+        </div>
     </div>
 </div>
 
 <script>
-function switchTab(tabName) {
+function switchTab(tabName, element) {
     // Update tab styling
     document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    event.target.classList.add('active');
-
+    element.classList.add('active');
+    
     // Show/hide content
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
     if (tabName === 'courses') {
-        document.getElementById('courses-content').style.display = 'block';
-        document.getElementById('achievements-content').style.display = 'none';
+        document.getElementById('courses-content').classList.add('active');
     } else {
-        // Redirect to achievements page for better experience
-        window.location.href = "{% url 'my_achievements' %}";
+        document.getElementById('achievements-content').classList.add('active');
     }
 }
+
+// Handle back button navigation
+window.addEventListener('popstate', function(event) {
+    // Check URL hash and switch tabs accordingly
+    if (window.location.hash === '#achievements') {
+        switchTab('achievements', document.querySelector('.tab[onclick*="achievements"]'));
+    } else {
+        switchTab('courses', document.querySelector('.tab[onclick*="courses"]'));
+    }
+});
+
+// Initialize tab state based on URL hash
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#achievements') {
+        switchTab('achievements', document.querySelector('.tab[onclick*="achievements"]'));
+    }
+});
 </script>
 {% endblock %}

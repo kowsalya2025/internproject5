@@ -1139,22 +1139,51 @@ def checkout(request, slug):
     total_amount = round(base_price + tax_amount, 2)
     amount_paise = int(total_amount * 100)
 
-    # Create Razorpay order
-    order = razorpay_client.order.create({
-        'amount': amount_paise,
-        'currency': 'INR',
-        'payment_capture': '1',
-    })
+    # DEBUG PRINTS - Check terminal for these
+    print("="*50)
+    print(f"CHECKOUT DEBUG:")
+    print(f"Course: {course.title}")
+    print(f"Base Price: ₹{base_price}")
+    print(f"Tax Amount: ₹{tax_amount}")
+    print(f"Total Amount: ₹{total_amount}")
+    print(f"Amount in Paise: {amount_paise}")
+    print(f"Razorpay Key ID: {settings.RAZORPAY_KEY_ID[:10]}...")  # Only show first 10 chars
+    print("="*50)
+
+    # Create Razorpay order WITH ERROR HANDLING
+    try:
+        order = razorpay_client.order.create({
+            'amount': amount_paise,
+            'currency': 'INR',
+            'payment_capture': '1',
+        })
+        
+        print(f"✓ Razorpay Order Created Successfully!")
+        print(f"Order ID: {order['id']}")
+        print("="*50)
+        
+    except Exception as e:
+        print("="*50)
+        print(f"✗ RAZORPAY ERROR:")
+        print(f"Error Type: {type(e).__name__}")
+        print(f"Error Message: {str(e)}")
+        print("="*50)
+        messages.error(request, f'Unable to create payment order. Please try again later.')
+        return redirect('course_detail', slug=slug)
 
     # Create Payment record
-    Payment.objects.create(
-        user=request.user,
-        course=course,
-        razorpay_order_id=order['id'],
-        amount=total_amount,
-        currency='INR',
-        status='pending'
-    )
+    try:
+        Payment.objects.create(
+            user=request.user,
+            course=course,
+            razorpay_order_id=order['id'],
+            amount=total_amount,
+            currency='INR',
+            status='pending'
+        )
+        print(f"✓ Payment record created in database")
+    except Exception as e:
+        print(f"✗ Database Error: {str(e)}")
 
     context = {
         'course': course,
@@ -1169,39 +1198,50 @@ def checkout(request, slug):
     return render(request, 'courses/checkout.html', context)
 
 
-@csrf_exempt
-@login_required
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_protect  # enable CSRF
+from .models import Course, Payment, Purchase, CourseEnrollment
+import razorpay
+
+
+@csrf_protect
 def verify_payment(request):
-    """Verify Razorpay payment"""
+    """Verify Razorpay payment from browser checkout"""
     if request.method != 'POST':
         return HttpResponse("Invalid request method", status=405)
     
     try:
+        # Razorpay fields
         razorpay_order_id = request.POST.get('razorpay_order_id')
         razorpay_payment_id = request.POST.get('razorpay_payment_id')
         razorpay_signature = request.POST.get('razorpay_signature')
         course_slug = request.POST.get('course_slug')
         
         course = get_object_or_404(Course, slug=course_slug, is_active=True)
+        
+        # Get Payment record linked to user & order
         payment = Payment.objects.get(
             razorpay_order_id=razorpay_order_id,
             user=request.user
         )
         
+        # Verify signature
         params_dict = {
             'razorpay_order_id': razorpay_order_id,
             'razorpay_payment_id': razorpay_payment_id,
             'razorpay_signature': razorpay_signature
         }
-        
         razorpay_client.utility.verify_payment_signature(params_dict)
         
+        # Update Payment object
         payment.razorpay_payment_id = razorpay_payment_id
         payment.razorpay_signature = razorpay_signature
         payment.status = 'success'
         payment.payment_date = timezone.now()
         
-        # Save billing info
+        # Save billing info from form
         payment.billing_first_name = request.POST.get('first_name', '')
         payment.billing_last_name = request.POST.get('last_name', '')
         payment.billing_email = request.POST.get('email', '')
@@ -1211,12 +1251,10 @@ def verify_payment(request):
         payment.billing_state = request.POST.get('state', '')
         payment.billing_zip_code = request.POST.get('zip_code', '')
         payment.billing_country = request.POST.get('country', 'IN')
-        payment.notes = request.POST.get('notes', '')
         payment.payment_method = request.POST.get('payment_method', 'card')
-        
         payment.save()
         
-        # Create Purchase record (new system)
+        # Create Purchase record
         Purchase.objects.get_or_create(
             user=request.user,
             course=course,
@@ -1229,7 +1267,7 @@ def verify_payment(request):
             }
         )
         
-        # Also create enrollment (legacy system)
+        # Create CourseEnrollment
         CourseEnrollment.objects.get_or_create(
             user=request.user,
             course=course,
@@ -1242,8 +1280,8 @@ def verify_payment(request):
         
         messages.success(request, f'Successfully enrolled in {course.title}!')
         return redirect('course_detail', slug=course.slug)
-        
-    except razorpay.errors.SignatureVerificationError as e:
+    
+    except razorpay.errors.SignatureVerificationError:
         messages.error(request, "Payment verification failed.")
         return redirect('payment_failed')
     except Payment.DoesNotExist:
@@ -1252,6 +1290,90 @@ def verify_payment(request):
     except Exception as e:
         messages.error(request, f"Payment error: {str(e)}")
         return redirect('payment_failed')
+
+
+# @csrf_exempt
+# def verify_payment(request):
+#     """Verify Razorpay payment"""
+#     if request.method != 'POST':
+#         return HttpResponse("Invalid request method", status=405)
+    
+#     try:
+#         razorpay_order_id = request.POST.get('razorpay_order_id')
+#         razorpay_payment_id = request.POST.get('razorpay_payment_id')
+#         razorpay_signature = request.POST.get('razorpay_signature')
+#         course_slug = request.POST.get('course_slug')
+        
+#         course = get_object_or_404(Course, slug=course_slug, is_active=True)
+#         payment = Payment.objects.get(
+#             razorpay_order_id=razorpay_order_id,
+#             user=request.user
+#         )
+        
+#         params_dict = {
+#             'razorpay_order_id': razorpay_order_id,
+#             'razorpay_payment_id': razorpay_payment_id,
+#             'razorpay_signature': razorpay_signature
+#         }
+        
+#         razorpay_client.utility.verify_payment_signature(params_dict)
+        
+#         payment.razorpay_payment_id = razorpay_payment_id
+#         payment.razorpay_signature = razorpay_signature
+#         payment.status = 'success'
+#         payment.payment_date = timezone.now()
+        
+#         # Save billing info
+#         payment.billing_first_name = request.POST.get('first_name', '')
+#         payment.billing_last_name = request.POST.get('last_name', '')
+#         payment.billing_email = request.POST.get('email', '')
+#         payment.billing_phone = request.POST.get('phone', '')
+#         payment.billing_address = request.POST.get('address', '')
+#         payment.billing_city = request.POST.get('city', '')
+#         payment.billing_state = request.POST.get('state', '')
+#         payment.billing_zip_code = request.POST.get('zip_code', '')
+#         payment.billing_country = request.POST.get('country', 'IN')
+#         payment.notes = request.POST.get('notes', '')
+#         payment.payment_method = request.POST.get('payment_method', 'card')
+        
+#         payment.save()
+        
+#         # Create Purchase record (new system)
+#         Purchase.objects.get_or_create(
+#             user=request.user,
+#             course=course,
+#             defaults={
+#                 'amount_paid': payment.amount,
+#                 'payment_status': 'completed',
+#                 'transaction_id': razorpay_payment_id,
+#                 'full_name': f"{payment.billing_first_name} {payment.billing_last_name}",
+#                 'email': payment.billing_email or request.user.email
+#             }
+#         )
+        
+#         # Also create enrollment (legacy system)
+#         CourseEnrollment.objects.get_or_create(
+#             user=request.user,
+#             course=course,
+#             defaults={
+#                 'enrollment_type': 'paid',
+#                 'is_paid': True,
+#                 'transaction_id': razorpay_payment_id
+#             }
+#         )
+        
+#         messages.success(request, f'Successfully enrolled in {course.title}!')
+#         return redirect('course_detail', slug=course.slug)
+        
+#     except razorpay.errors.SignatureVerificationError as e:
+#         messages.error(request, "Payment verification failed.")
+#         return redirect('payment_failed')
+#     except Payment.DoesNotExist:
+#         messages.error(request, "Payment record not found.")
+#         return redirect('payment_failed')
+#     except Exception as e:
+#         messages.error(request, f"Payment error: {str(e)}")
+#         return redirect('payment_failed')
     
 
 
@@ -1312,134 +1434,162 @@ def payment_failed(request):
     return render(request, 'courses/payment_failed.html', context)
 
 
-@csrf_exempt
-@login_required
-def create_razorpay_order(request, slug):
-    """Create Razorpay order via AJAX"""
-    if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
-    
-    try:
-        course = get_object_or_404(Course, slug=slug, is_active=True)
-        
-        # Check if already purchased
-        if Purchase.objects.filter(user=request.user, course=course, payment_status='completed').exists():
-            return JsonResponse({
-                'success': False,
-                'error': 'Already purchased this course'
-            }, status=400)
-        
-        if CourseEnrollment.objects.filter(user=request.user, course=course).exists():
-            return JsonResponse({
-                'success': False,
-                'error': 'Already enrolled in this course'
-            }, status=400)
-        
-        amount = float(course.discounted_price)
-        amount_paise = int(amount * 100)
-        
-        order_data = {
-            'amount': amount_paise,
-            'currency': 'INR',
-            'payment_capture': '1',
-        }
-        
-        order = razorpay_client.order.create(data=order_data)
-        
-        Payment.objects.create(
-            user=request.user,
-            course=course,
-            razorpay_order_id=order['id'],
-            amount=amount,
-            currency='INR',
-            status='pending',
-            created_at=timezone.now()
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'order_id': order['id'],
-            'amount': order['amount'],
-            'currency': order['currency']
-        })
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
-
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 @csrf_exempt
-@login_required
-def create_test_payment(request, slug):
-    """Create test payment for development"""
-    if not settings.DEBUG:
-        return JsonResponse({'success': False, 'error': 'Not allowed in production'}, status=403)
-    
+def razorpay_callback(request):
+    """
+    Razorpay webhook endpoint for payment confirmation.
+    Razorpay sends POST requests here after payment.
+    """
+    if request.method != "POST":
+        return JsonResponse({"status": "invalid method"}, status=405)
+
     try:
-        course = get_object_or_404(Course, slug=slug, is_active=True)
-        
-        # Check if already purchased
-        if Purchase.objects.filter(user=request.user, course=course, payment_status='completed').exists():
-            return JsonResponse({
-                'success': False,
-                'error': 'Already purchased this course'
-            }, status=400)
-        
-        test_order_id = f'test_order_{uuid.uuid4().hex[:10]}'
-        test_payment_id = f'test_payment_{uuid.uuid4().hex[:10]}'
-        
-        amount = float(course.discounted_price)
-        
-        # Create Payment record
-        payment = Payment.objects.create(
-            user=request.user,
-            course=course,
-            razorpay_order_id=test_order_id,
-            razorpay_payment_id=test_payment_id,
-            amount=amount,
-            currency='INR',
-            status='success',
-            payment_method='test',
-            payment_date=timezone.now(),
-            created_at=timezone.now()
-        )
-        
-        # Create Purchase record (new system)
-        Purchase.objects.get_or_create(
-            user=request.user,
-            course=course,
-            defaults={
-                'amount_paid': amount,
-                'payment_status': 'completed',
-                'transaction_id': test_payment_id,
-                'full_name': request.user.get_full_name() or request.user.username,
-                'email': request.user.email
-            }
-        )
-        
-        # Create enrollment (legacy system)
-        CourseEnrollment.objects.get_or_create(
-            user=request.user,
-            course=course,
-            defaults={
-                'enrollment_type': 'paid',
-                'is_paid': True,
-                'transaction_id': test_payment_id
-            }
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'redirect_url': f'/courses/{course.slug}/'
-        })
-        
+        # Optional: log incoming data for debugging
+        print("Razorpay callback received:", request.POST)
+
+        # You can optionally call your existing verify_payment logic here
+        # For example, you could call:
+        # return verify_payment(request)
+
+        # Or just respond OK for testing:
+        return JsonResponse({"status": "success"})
+
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        }, status=400)
+        print("Razorpay callback error:", str(e))
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+# @csrf_exempt
+# @login_required
+# def create_razorpay_order(request, slug):
+#     """Create Razorpay order via AJAX"""
+#     if request.method != 'POST':
+#         return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
+    
+#     try:
+#         course = get_object_or_404(Course, slug=slug, is_active=True)
+        
+#         # Check if already purchased
+#         if Purchase.objects.filter(user=request.user, course=course, payment_status='completed').exists():
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': 'Already purchased this course'
+#             }, status=400)
+        
+#         if CourseEnrollment.objects.filter(user=request.user, course=course).exists():
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': 'Already enrolled in this course'
+#             }, status=400)
+        
+#         amount = float(course.discounted_price)
+#         amount_paise = int(amount * 100)
+        
+#         order_data = {
+#             'amount': amount_paise,
+#             'currency': 'INR',
+#             'payment_capture': '1',
+#         }
+        
+#         order = razorpay_client.order.create(data=order_data)
+        
+#         Payment.objects.create(
+#             user=request.user,
+#             course=course,
+#             razorpay_order_id=order['id'],
+#             amount=amount,
+#             currency='INR',
+#             status='pending',
+#             created_at=timezone.now()
+#         )
+        
+#         return JsonResponse({
+#             'success': True,
+#             'order_id': order['id'],
+#             'amount': order['amount'],
+#             'currency': order['currency']
+#         })
+        
+#     except Exception as e:
+#         return JsonResponse({
+#             'success': False,
+#             'error': str(e)
+#         }, status=400)
+
+
+# @csrf_exempt
+# @login_required
+# def create_test_payment(request, slug):
+#     """Create test payment for development"""
+#     if not settings.DEBUG:
+#         return JsonResponse({'success': False, 'error': 'Not allowed in production'}, status=403)
+    
+#     try:
+#         course = get_object_or_404(Course, slug=slug, is_active=True)
+        
+#         # Check if already purchased
+#         if Purchase.objects.filter(user=request.user, course=course, payment_status='completed').exists():
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': 'Already purchased this course'
+#             }, status=400)
+        
+#         test_order_id = f'test_order_{uuid.uuid4().hex[:10]}'
+#         test_payment_id = f'test_payment_{uuid.uuid4().hex[:10]}'
+        
+#         amount = float(course.discounted_price)
+        
+#         # Create Payment record
+#         payment = Payment.objects.create(
+#             user=request.user,
+#             course=course,
+#             razorpay_order_id=test_order_id,
+#             razorpay_payment_id=test_payment_id,
+#             amount=amount,
+#             currency='INR',
+#             status='success',
+#             payment_method='test',
+#             payment_date=timezone.now(),
+#             created_at=timezone.now()
+#         )
+        
+#         # Create Purchase record (new system)
+#         Purchase.objects.get_or_create(
+#             user=request.user,
+#             course=course,
+#             defaults={
+#                 'amount_paid': amount,
+#                 'payment_status': 'completed',
+#                 'transaction_id': test_payment_id,
+#                 'full_name': request.user.get_full_name() or request.user.username,
+#                 'email': request.user.email
+#             }
+#         )
+        
+#         # Create enrollment (legacy system)
+#         CourseEnrollment.objects.get_or_create(
+#             user=request.user,
+#             course=course,
+#             defaults={
+#                 'enrollment_type': 'paid',
+#                 'is_paid': True,
+#                 'transaction_id': test_payment_id
+#             }
+#         )
+        
+#         return JsonResponse({
+#             'success': True,
+#             'redirect_url': f'/courses/{course.slug}/'
+#         })
+        
+#     except Exception as e:
+#         return JsonResponse({
+#             'success': False,
+#             'error': str(e)
+#         }, status=400)
 
 
 # ===== OTHER PAGES =====
@@ -1926,6 +2076,11 @@ def my_achievements(request):
 
 
 
+from PIL import Image, ImageDraw, ImageFont
+from django.conf import settings
+import os
+
+
 @login_required
 def certificate_detail(request, certificate_id):
     """Display individual certificate"""
@@ -1935,8 +2090,18 @@ def certificate_detail(request, certificate_id):
         user=request.user
     )
     
+    # Generate certificate image dynamically
+    try:
+        certificate.generated_image = cert_image_path
+        certificate.save()
+    except Exception as e:
+        # Log error but continue - will show template without generated image
+        print(f"Error generating certificate: {e}")
+        cert_image_path = None
+    
     context = {
         'certificate': certificate,
+        'cert_image_path': cert_image_path,
     }
     return render(request, 'lms/certificate_detail.html', context)
 
