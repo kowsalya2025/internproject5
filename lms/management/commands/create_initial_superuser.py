@@ -3,29 +3,16 @@ from django.contrib.auth import get_user_model
 import os
 
 class Command(BaseCommand):
-    help = 'Creates initial superuser from environment variables'
+    help = "Creates a superuser if it doesn't exist"
 
     def handle(self, *args, **options):
         User = get_user_model()
-        
-        email = os.getenv('DJANGO_SUPERUSER_EMAIL')
-        password = os.getenv('DJANGO_SUPERUSER_PASSWORD')
-        
-        if not email or not password:
-            self.stdout.write(self.style.WARNING(
-                'Skipping superuser creation: DJANGO_SUPERUSER_EMAIL or DJANGO_SUPERUSER_PASSWORD not set'
-            ))
-            return
-        
-        if User.objects.filter(email=email).exists():
-            self.stdout.write(self.style.SUCCESS(f'Superuser with email {email} already exists'))
-            return
-        
-        try:
-            User.objects.create_superuser(
-                email=email,
-                password=password,
-            )
-            self.stdout.write(self.style.SUCCESS(f'✅ Superuser created successfully: {email}'))
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error creating superuser: {str(e)}'))
+        email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
+        username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
+        password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
+
+        if not User.objects.filter(email=email).exists():
+            User.objects.create_superuser(username=username, email=email, password=password)
+            self.stdout.write(self.style.SUCCESS(f"Superuser {email} created"))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"Superuser {email} already exists"))
